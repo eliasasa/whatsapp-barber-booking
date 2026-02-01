@@ -7,6 +7,15 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Availability {
+  id        String   @id @default(uuid())
+  weekday   Int     
+  startTime String   
+  endTime   String   
+
+  createdAt DateTime @default(now())
+}
+
 model Client {
   id        String   @id @default(uuid())
   name      String?

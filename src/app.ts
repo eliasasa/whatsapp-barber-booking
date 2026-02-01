@@ -1,5 +1,7 @@
 import express from "express";
 import appointmentRoutes from "./routes/appointments";
+import availabilityRoutes from "./routes/availability";
+
 
 export const app = express();
 
@@ -10,3 +12,6 @@ app.get("/health", (_req, res) => {
 });
 
 app.use("/appointments", appointmentRoutes);
+
+app.use("/availability", availabilityRoutes);
+
