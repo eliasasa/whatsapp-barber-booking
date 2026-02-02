@@ -2,6 +2,8 @@ import express from "express";
 import appointmentRoutes from "./routes/appointments";
 import availabilityRoutes from "./routes/availability";
 import availabilitySlotsRoutes from "./routes/availabilitySlots";
+import cancelAppointmentRoutes from "./routes/cancelAppointment";
+import rescheduleAppointmentRoutes from "./routes/rescheduleAppointment"
 
 export const app = express();
 
@@ -17,4 +19,7 @@ app.use("/availability", availabilityRoutes);
 
 app.use("/availability-slots", availabilitySlotsRoutes);
 
+app.use("/appointments", cancelAppointmentRoutes);
+
+app.use("/appointments", rescheduleAppointmentRoutes);
 
