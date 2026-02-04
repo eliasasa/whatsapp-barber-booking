@@ -3,7 +3,8 @@ import appointmentRoutes from "./routes/appointments";
 import availabilityRoutes from "./routes/availability";
 import availabilitySlotsRoutes from "./routes/availabilitySlots";
 import cancelAppointmentRoutes from "./routes/cancelAppointment";
-import rescheduleAppointmentRoutes from "./routes/rescheduleAppointment"
+import rescheduleAppointmentRoutes from "./routes/rescheduleAppointment";
+import dailyAgendaRoutes from "./routes/dailyAgenda";
 
 export const app = express();
 
@@ -22,4 +23,7 @@ app.use("/availability-slots", availabilitySlotsRoutes);
 app.use("/appointments", cancelAppointmentRoutes);
 
 app.use("/appointments", rescheduleAppointmentRoutes);
+
+app.use("/agenda", dailyAgendaRoutes);
+
 
