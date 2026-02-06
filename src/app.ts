@@ -5,10 +5,12 @@ import availabilitySlotsRoutes from "./routes/availabilitySlots";
 import cancelAppointmentRoutes from "./routes/cancelAppointment";
 import rescheduleAppointmentRoutes from "./routes/rescheduleAppointment";
 import dailyAgendaRoutes from "./routes/dailyAgenda";
+import webhookRoutes from "./routes/webhook";
 
 export const app = express();
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.get("/health", (_req, res) => {
   return res.status(200).json({ status: "ok" });
@@ -26,4 +28,4 @@ app.use("/appointments", rescheduleAppointmentRoutes);
 
 app.use("/agenda", dailyAgendaRoutes);
 
-
+app.use("/webhook", webhookRoutes);
