@@ -8,6 +8,10 @@ services:
       - .env
     volumes:
       - ./sessions:/app/.sessions
+      - waha_data:/app/.media
+    environment:
+      WHATSAPP_HOOK_URL: http://host.docker.internal:3000/webhook/waha
+      WHATSAPP_HOOK_EVENTS: message
     restart: unless-stopped
 
   postgres:
@@ -24,3 +28,4 @@ services:
 
 volumes:
   postgres_data:
+  waha_data:
