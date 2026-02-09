@@ -18,6 +18,32 @@ export async function sendMessage({
     text,
     session = "default",
 }: SendMessageParams): Promise<void> {
+
+    if (to === "status@broadcast") {
+        console.warn("🚫 Tentativa de envio para STATUS bloqueada");
+        return;
+    }
+
+    if (to.endsWith("@g.us")) {
+        console.warn("🚫 Envio para GRUPO bloqueado:", to);
+        return;
+    }
+
+    if (to.endsWith("@broadcast")) {
+        console.warn("🚫 Envio para LISTA DE TRANSMISSÃO bloqueado:", to);
+        return;
+    }
+
+    if (to === "me" || to === "self") {
+        console.warn("🚫 Envio para o próprio bot bloqueado");
+        return;
+    }
+
+    if (!to.endsWith("@c.us")) {
+        console.warn("🚫 Destino inválido ou não permitido:", to);
+        return;
+    }
+
     try {
         await axios.post(
         `${WAHA_API_URL}/api/sendText`,

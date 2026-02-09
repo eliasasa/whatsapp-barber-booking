@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { handleIncomingMessage } from "../whatsapp/handler";
 import { sendMessage } from "../whatsapp/wahaClient";
+import { BOT_START_TIME } from "../global/botState";
 
 const router = Router();
 
@@ -20,6 +21,12 @@ router.post("/waha", async (req, res) => {
     const text: string | undefined = payload?.body;
     const from: string | undefined = payload?.from;
     const fromMe: boolean | undefined = payload?.fromMe;
+
+    const receivedTime = Date.now();
+    if (receivedTime < BOT_START_TIME) {
+      console.log("🚫 Ignorado (mensagem anterior ao início do bot)");
+      return res.sendStatus(200);
+    }
 
     // Evita loop
     if (fromMe) {
@@ -41,10 +48,11 @@ router.post("/waha", async (req, res) => {
 
     console.log("💬 Mensagem recebida:", text);
 
-    const reply = handleIncomingMessage(text);
+    const reply = handleIncomingMessage(from, text);
 
     console.log("🤖 Resposta:", reply);
 
+    // Envia a resposta pelo WAHA
     await sendMessage({
       to: from,
       text: reply,
