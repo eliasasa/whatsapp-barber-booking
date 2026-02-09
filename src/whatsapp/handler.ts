@@ -1,60 +1,107 @@
-import { getConversation, updateConversation, resetConversation } from "./conversationStore";
+import { getConversation, updateConversation, resetConversation, clearPendingIntent } from "./conversationStore";
 import { ConversationStep } from "./conversationTypes";
 import { detectIntent } from "./intents";
 import { replies } from "./replies";
+import { getPromptForStep } from "./conversationPrompts";
+import { detectCommand } from "./commandDetector";
+import { COMMANDS } from "./commands";
 
-export function handleIncomingMessage(from: string, text: string): string {
+const FLOW_STARTING_INTENTS = ["BOOK", "CHECK_AVAILABILITY"];
+
+export function handleIncomingMessage(from: string, text: string): string | null  {
     const message = text.trim().toLowerCase();
     let conversation = getConversation(from);
+
+    // COMANDOS (#pause, #resume...)
+
+    const command = detectCommand(message);
+
+    if (command && COMMANDS[command]) {
+        return COMMANDS[command]({
+            from,
+            isPaused: !!conversation.paused,
+        });
+    }
+
+    // CONVERSA PAUSADA
+
+    if (conversation.paused) {
+        return null;
+    }
 
     // Detecta intenção
     const intent = detectIntent(message);
 
-    // COMENTARIO PESSOAL: PRECISO FAZER COM QUE O BOT IDENTIFIQUE SE O USUÁRIO CITOU UM INTENT NO MEIO DE UM FLUXO // COMANDO DE BLOQUEAR RESPOSTAS AUTOMÁTICAS
+    // CONFIRMAÇÃO DE TROCA DE FLUXO (pendingIntent)
+    if (conversation.pendingIntent) {
+        if (message === "1") {
+            const newIntent = conversation.pendingIntent;
+            resetConversation(from);
 
-    if (intent === "GREETING") {
-        // Monta a mensagem base de saudação
-        let reply = replies.greeting;
+            if (newIntent === "BOOK") {
+                updateConversation(from, { step: ConversationStep.ASK_SERVICE });
+                return "Perfeito 👍\nQual serviço você deseja?\n1️⃣ Corte\n2️⃣ Barba";
+            }
 
-        // Adiciona dica do próximo passo do fluxo, se não estiver no START
-        switch (conversation.step) {
-            case ConversationStep.ASK_SERVICE:
-                reply += "\nQual serviço você deseja?\n1️⃣ Corte\n2️⃣ Barba";
-                break;
-            case ConversationStep.ASK_DATE:
-                reply += `\nÓtimo! Qual dia você deseja marcar para ${conversation.serviceId}? (ex: 25/02)`;
-                break;
-            case ConversationStep.ASK_TIME:
-                reply += `\nAgora me diga o horário para ${conversation.serviceId} em ${conversation.date} (ex: 14:30)`;
-                break;
-            case ConversationStep.CONFIRM:
-                reply += `\nConfirme seu agendamento:\n📌 Serviço: ${conversation.serviceId}\n📅 Data: ${conversation.date}\n⏰ Horário: ${conversation.time}\nDigite 1️⃣ para confirmar ou 2️⃣ para cancelar`;
-                break;
-            default:
-                break;
+            if (newIntent === "CHECK_AVAILABILITY") {
+                return "Claro 😊\nQual dia você deseja verificar?";
+            }
         }
 
-        return reply;
+        if (message === "2") {
+            clearPendingIntent(from);
+            const updatedConversation = getConversation(from);
+
+            return (
+                "Beleza 😄 Vamos continuar de onde paramos.\n\n" +
+                getPromptForStep(updatedConversation)
+            );
+        }
+
+
+        return "Digite 1️⃣ para cancelar o fluxo atual ou 2️⃣ para continuar.";
     }
 
-    // --- Outras intenções ---
+    // INTERCEPTA NOVO INTENT NO MEIO DO FLUXO
+    if (
+        conversation.step !== ConversationStep.START &&
+        intent &&
+        intent !== "GREETING" &&
+        intent !== "CANCEL" &&
+        FLOW_STARTING_INTENTS.includes(intent)
+    ) {
+        updateConversation(from, { pendingIntent: intent });
+
+        return (
+            "⚠️ Percebi que você quer iniciar outra ação.\n\n" +
+            "Deseja cancelar o agendamento atual e começar um novo?\n" +
+            "Digite 1️⃣ para sim ou 2️⃣ para continuar."
+        );
+    }
+
+    // GREETING
+    if (intent === "GREETING") {
+        return replies.greeting + "\n" + getPromptForStep(conversation);
+    }
+
+    // INTENTS DIRETOS
     switch (intent) {
         case "CANCEL":
             resetConversation(from);
             return "❌ Agendamento cancelado. Se quiser, é só chamar novamente.";
+
         case "CHECK_AVAILABILITY":
-            return "Claro! Me diga o dia que quer verificar.";
+            return "Claro! 😊 Me diga o dia que quer verificar.";
+
         case "BOOK":
             if (conversation.step === ConversationStep.START) {
                 updateConversation(from, { step: ConversationStep.ASK_SERVICE });
                 return "Ótimo! 👋\nQual serviço você deseja?\n1️⃣ Corte\n2️⃣ Barba";
             }
             break;
-        default:
-            break;
     }
 
-    // --- Fluxo baseado em step ---
+    // FLUXO BASEADO EM STEP
     switch (conversation.step) {
         case ConversationStep.START:
             updateConversation(from, { step: ConversationStep.ASK_SERVICE });
@@ -62,22 +109,38 @@ export function handleIncomingMessage(from: string, text: string): string {
 
         case ConversationStep.ASK_SERVICE:
             if (message === "1") {
-                updateConversation(from, { step: ConversationStep.ASK_DATE, serviceId: "CORTE" });
+                updateConversation(from, {
+                    step: ConversationStep.ASK_DATE,
+                    serviceId: "CORTE",
+                });
                 return "Perfeito ✂️\nQual dia você deseja? (ex: 25/02)";
             }
+
             if (message === "2") {
-                updateConversation(from, { step: ConversationStep.ASK_DATE, serviceId: "BARBA" });
+                updateConversation(from, {
+                    step: ConversationStep.ASK_DATE,
+                    serviceId: "BARBA",
+                });
                 return "Perfeito 🧔\nQual dia você deseja? (ex: 25/02)";
             }
+
             return "Por favor, escolha 1️⃣ Corte ou 2️⃣ Barba";
 
         case ConversationStep.ASK_DATE:
-            updateConversation(from, { step: ConversationStep.ASK_TIME, date: message });
+            updateConversation(from, {
+                step: ConversationStep.ASK_TIME,
+                date: message,
+            });
             return "Ótimo 📅\nAgora me diga o horário (ex: 14:30)";
 
         case ConversationStep.ASK_TIME:
-            updateConversation(from, { step: ConversationStep.CONFIRM, time: message });
-            conversation = getConversation(from); // pega versão atualizada
+            updateConversation(from, {
+                step: ConversationStep.CONFIRM,
+                time: message,
+            });
+
+            conversation = getConversation(from);
+
             return (
                 "Confirme seu agendamento:\n\n" +
                 `📌 Serviço: ${conversation.serviceId}\n` +
@@ -91,10 +154,12 @@ export function handleIncomingMessage(from: string, text: string): string {
                 resetConversation(from);
                 return "✅ Agendamento confirmado! Até lá 👊";
             }
+
             if (message === "2") {
                 resetConversation(from);
                 return "❌ Agendamento cancelado. Se quiser, é só chamar novamente.";
             }
+
             return "Digite 1️⃣ para confirmar ou 2️⃣ para cancelar";
 
         default:
