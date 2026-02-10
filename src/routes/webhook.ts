@@ -2,7 +2,14 @@ import { Router } from "express";
 import { handleIncomingMessage } from "../whatsapp/handler";
 import { sendMessage } from "../whatsapp/wahaClient";
 import { BOT_START_TIME } from "../global/botState";
+import { checkRateLimit } from "../whatsapp/rateLimiter";
 
+type ConversationState = {
+  lastReply?: string;
+  lastReplyAt?: number;
+};
+
+const conversations = new Map<string, ConversationState>();
 const router = Router();
 
 router.post("/waha", async (req, res) => {
@@ -16,7 +23,6 @@ router.post("/waha", async (req, res) => {
 
   const { event, payload, session } = body;
 
-  // ---- Mensagens ----
   if (event === "message") {
     const text: string | undefined = payload?.body;
     const from: string | undefined = payload?.from;
@@ -28,19 +34,16 @@ router.post("/waha", async (req, res) => {
       return res.sendStatus(200);
     }
 
-    // Evita loop
     if (fromMe) {
       console.log("🚫 Ignorado (fromMe)");
       return res.sendStatus(200);
     }
 
-    // Ignora mensagens inválidas
     if (!text || !from) {
       console.log("🚫 Ignorado (mensagem inválida)");
       return res.sendStatus(200);
     }
 
-    // Ignora grupos
     if (from.endsWith("@g.us")) {
       console.log("🚫 Ignorado (grupo)");
       return res.sendStatus(200);
@@ -48,11 +51,44 @@ router.post("/waha", async (req, res) => {
 
     console.log("💬 Mensagem recebida:", text);
 
+    const rate = checkRateLimit(from);
+
+    if (rate === "WARN") {
+      await sendMessage({
+        to: from,
+        text:
+          "⚠️ Opa! Você está mandando mensagens muito rápido.\n" +
+          "Vamos continuar em alguns instantes 😉",
+        session: session || "default",
+      });
+      return res.json({ ok: true });
+    }
+
+    if (rate === "BLOCK") {
+      console.log("⏳ Rate limit ativo para", from);
+      return res.json({ ok: true });
+    }
+
     const reply = handleIncomingMessage(from, text);
+
+    if (!reply) {
+      return res.sendStatus(200);
+    }
+
+    const state = conversations.get(from);
+
+    if (state?.lastReply === reply) {
+      console.log("🔁 Resposta repetida ignorada");
+      return res.sendStatus(200);
+    }
+
+    conversations.set(from, {
+      lastReply: reply,
+      lastReplyAt: Date.now(),
+    });
 
     console.log("🤖 Resposta:", reply);
 
-    // Envia a resposta pelo WAHA
     await sendMessage({
       to: from,
       text: reply,
@@ -60,7 +96,6 @@ router.post("/waha", async (req, res) => {
     });
   }
 
-  // ---- Status da sessão ----
   if (event === "session.status") {
     console.log("📶 Status da sessão:", payload);
   }
