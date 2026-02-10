@@ -8,9 +8,13 @@ import { COMMANDS } from "./commands";
 
 const FLOW_STARTING_INTENTS = ["BOOK", "CHECK_AVAILABILITY"];
 
+// CAPTURAR DADOS REAIS DO POSTGRESQL <<<<<<<<<<<<<<<<<<<<<<<<<
+
 export function handleIncomingMessage(from: string, text: string): string | null  {
     const message = text.trim().toLowerCase();
     let conversation = getConversation(from);
+
+     updateConversation(from, { lastInteraction: Date.now() });
 
     // COMANDOS (#pause, #resume...)
 

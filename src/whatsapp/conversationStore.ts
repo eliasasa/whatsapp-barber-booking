@@ -7,7 +7,10 @@ export type ConversationData = {
     time?: string;
     pendingIntent?: string;
     paused?: boolean;
+    lastInteraction?: number;
 };
+
+const CONVERSATION_TTL = 60 * 60 * 1000;
 
 const conversations = new Map<string, ConversationData>();
 
@@ -16,11 +19,32 @@ export function setConversation(from: string, data: ConversationData) {
 }
 
 export function getConversation(userId: string): ConversationData {
+    const now = Date.now();
+
     if (!conversations.has(userId)) {
-        conversations.set(userId, { step: ConversationStep.START });
+        const data = {
+            step: ConversationStep.START,
+            lastInteraction: now,
+        };
+        conversations.set(userId, data);
+        return data;
     }
 
-    return conversations.get(userId)!;
+    const conversation = conversations.get(userId)!;
+
+    if (
+        conversation.lastInteraction &&
+        now - conversation.lastInteraction > CONVERSATION_TTL
+    ) {
+        const reset = {
+            step: ConversationStep.START,
+            lastInteraction: now,
+        };
+        conversations.set(userId, reset);
+        return reset;
+    }
+
+    return conversation;
 }
 
 export function updateConversation(
