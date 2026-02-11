@@ -69,7 +69,7 @@ router.post("/waha", async (req, res) => {
       return res.json({ ok: true });
     }
 
-    const reply = handleIncomingMessage(from, text);
+    const reply = await handleIncomingMessage(from, text);
 
     if (!reply) {
       return res.sendStatus(200);

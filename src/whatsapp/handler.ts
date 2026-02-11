@@ -5,12 +5,15 @@ import { replies } from "./replies";
 import { getPromptForStep } from "./conversationPrompts";
 import { detectCommand } from "./commandDetector";
 import { COMMANDS } from "./commands";
+import { normalizePhone } from "../utils/phone";
+import { getOrCreateClient } from "../services/clientService";
+import { createAppointment, checkTimeConflict } from "../services/appointmentService";
+import { prisma } from "../lib/prisma";
+
 
 const FLOW_STARTING_INTENTS = ["BOOK", "CHECK_AVAILABILITY"];
 
-// CAPTURAR DADOS REAIS DO POSTGRESQL <<<<<<<<<<<<<<<<<<<<<<<<<
-
-export function handleIncomingMessage(from: string, text: string): string | null  {
+export async function handleIncomingMessage(from: string, text: string): Promise<string | null>  {
     const message = text.trim().toLowerCase();
     let conversation = getConversation(from);
 
@@ -115,7 +118,7 @@ export function handleIncomingMessage(from: string, text: string): string | null
             if (message === "1") {
                 updateConversation(from, {
                     step: ConversationStep.ASK_DATE,
-                    serviceId: "CORTE",
+                    serviceId: "Corte",
                 });
                 return "Perfeito ✂️\nQual dia você deseja? (ex: 25/02)";
             }
@@ -123,21 +126,65 @@ export function handleIncomingMessage(from: string, text: string): string | null
             if (message === "2") {
                 updateConversation(from, {
                     step: ConversationStep.ASK_DATE,
-                    serviceId: "BARBA",
+                    serviceId: "Barba",
                 });
                 return "Perfeito 🧔\nQual dia você deseja? (ex: 25/02)";
             }
 
             return "Por favor, escolha 1️⃣ Corte ou 2️⃣ Barba";
 
-        case ConversationStep.ASK_DATE:
+        case ConversationStep.ASK_DATE: {
+            if (!/^\d{2}\/\d{2}$/.test(message)) {
+                return "📅 Data inválida.\nUse o formato DD/MM (ex: 25/02).";}
+
+            const [dayStr, monthStr] = message.split("/");
+            const day = Number(dayStr);
+            const month = Number(monthStr);
+            const year = new Date().getFullYear();
+
+            const testDate = new Date(year, month - 1, day);
+
+            // Verifica se a data realmente existe
+            if (
+                testDate.getFullYear() !== year ||
+                testDate.getMonth() !== month - 1 ||
+                testDate.getDate() !== day
+            ) {
+                return "📅 Data inválida. Verifique o dia e o mês.";
+            }
+
+            // Bloquear datas passadas
+            if (testDate < new Date()) {
+                return "⚠️ Não é possível agendar para datas passadas.";
+            }
+
             updateConversation(from, {
                 step: ConversationStep.ASK_TIME,
                 date: message,
             });
-            return "Ótimo 📅\nAgora me diga o horário (ex: 14:30)";
 
-        case ConversationStep.ASK_TIME:
+            return "Ótimo 📅\nAgora me diga o horário (ex: 14:30)";
+        }
+
+
+        case ConversationStep.ASK_TIME: {
+            if (!/^\d{2}:\d{2}$/.test(message)) {
+                return "⏰ Horário inválido.\nUse o formato HH:mm (ex: 14:30)";
+            }
+
+            const [hourStr, minuteStr] = message.split(":");
+            const hour = Number(hourStr);
+            const minute = Number(minuteStr);
+
+            if (hour > 23 || minute > 59) {
+                return "⏰ Horário inválido.";
+            }
+
+            // Horário comercial (Futuramente saira da DB)
+            if (hour < 9 || hour >= 18) {
+                return "🕒 Nosso horário é das 09:00 às 18:00.";
+            }
+
             updateConversation(from, {
                 step: ConversationStep.CONFIRM,
                 time: message,
@@ -152,11 +199,82 @@ export function handleIncomingMessage(from: string, text: string): string | null
                 `⏰ Horário: ${conversation.time}\n\n` +
                 "Digite 1️⃣ para confirmar ou 2️⃣ para cancelar"
             );
+        }
 
+        
         case ConversationStep.CONFIRM:
             if (message === "1") {
-                resetConversation(from);
-                return "✅ Agendamento confirmado! Até lá 👊";
+                const currentConversation = getConversation(from);
+
+                try {
+                    const phone = normalizePhone(from);
+
+                    const client = await getOrCreateClient(phone);
+
+                    const serviceName = currentConversation.serviceId;
+
+                    if (!serviceName) return null;
+
+                    const service = await prisma.service.findFirst({
+                        where: {
+                            name: {
+                                equals: serviceName,
+                                mode: "insensitive",
+                            },
+                        },
+                    });
+
+                    if (!service) {
+                        resetConversation(from);
+                        return "Serviço não encontrado. Vamos começar novamente.";
+                    }
+
+                    // Converter data (dd/mm) para formato ISO
+                    const [day, month] = currentConversation.date!.split("/");
+                    const year = new Date().getFullYear();
+
+                    if (!currentConversation.date || !currentConversation.time) {
+                        resetConversation(from);
+                        return "Dados inválidos. Vamos começar novamente.";
+                    }
+
+                    const startAt = new Date(
+                        `${year}-${month}-${day}T${currentConversation.time}:00`
+                    );
+
+                    // Calcular fim baseado na duração
+                    const endAt = new Date(
+                        startAt.getTime() + service.duration * 60000
+                    );
+
+                    // Verificar conflito
+                    const hasConflict = await checkTimeConflict(startAt, endAt);
+
+                    if (hasConflict) {
+                        updateConversation(from, {
+                            step: ConversationStep.ASK_TIME,
+                        });
+
+                        return "⚠️ Esse horário já está ocupado. Escolha outro horário.";
+                    }
+
+                    // Criar agendamento
+                    await createAppointment(
+                        client.id,
+                        service.id,
+                        startAt,
+                        endAt
+                    );
+
+                    resetConversation(from);
+
+                    return "✅ Agendamento confirmado com sucesso! 💈";
+
+                } catch (error) {
+                    console.error(error);
+                    resetConversation(from);
+                    return "Ocorreu um erro ao confirmar. Tente novamente.";
+                }
             }
 
             if (message === "2") {
@@ -165,6 +283,8 @@ export function handleIncomingMessage(from: string, text: string): string | null
             }
 
             return "Digite 1️⃣ para confirmar ou 2️⃣ para cancelar";
+
+
 
         default:
             resetConversation(from);

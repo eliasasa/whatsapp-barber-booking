@@ -48,16 +48,22 @@ export function getConversation(userId: string): ConversationData {
 }
 
 export function updateConversation(
-    userId: string,
-    data: Partial<ConversationData>
+  userId: string,
+  data: Partial<ConversationData>
 ) {
-    const current = getConversation(userId);
-    conversations.set(userId, { ...current, ...data });
+  const current = getConversation(userId);
+  conversations.set(userId, {
+    ...current,
+    ...data,
+    lastInteraction: Date.now(),
+  });
 }
 
-
 export function resetConversation(userId: string) {
-    conversations.set(userId, { step: ConversationStep.START });
+    conversations.set(userId, {
+        step: ConversationStep.START,
+        lastInteraction: Date.now(),
+    });
 }
 
 export function clearPendingIntent(from: string) {
