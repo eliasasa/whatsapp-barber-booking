@@ -6,7 +6,7 @@ type RateLimitInfo = {
 };
 
 const RATE_LIMIT_WINDOW = 60_000; // 1 min
-const MAX_MESSAGES = 10;
+const MAX_MESSAGES = 15;
 const COOLDOWN = 2_000;
 
 const users = new Map<string, RateLimitInfo>();

@@ -20,7 +20,9 @@ export async function createAppointment(
   clientId: string,
   serviceId: string,
   startAt: Date,
-  endAt: Date
+  endAt: Date,
+  address?: string,
+  notes?: string
 ) {
   return prisma.appointment.create({
     data: {
@@ -28,6 +30,8 @@ export async function createAppointment(
       serviceId,
       startAt,
       endAt,
+      address: address ?? null,
+      notes: notes ?? null,
     },
   });
 }

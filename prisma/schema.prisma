@@ -40,6 +40,9 @@ model Appointment {
   endAt     DateTime
   status    AppointmentStatus @default(CONFIRMED)
 
+  address   String?
+  notes     String?
+
   clientId  String
   serviceId String
 

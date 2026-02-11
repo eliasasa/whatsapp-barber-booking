@@ -8,6 +8,8 @@ export type ConversationData = {
     pendingIntent?: string;
     paused?: boolean;
     lastInteraction?: number;
+    address?: string;
+    notes?: string;
 };
 
 const CONVERSATION_TTL = 60 * 60 * 1000;
