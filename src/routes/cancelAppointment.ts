@@ -1,32 +1,28 @@
 import { Router } from "express";
-import { prisma } from "../lib/prisma";
+import { CancelAppointmentService } from "../services/CancelAppointmentService";
 
 const router = Router();
 
-router.patch("/:id/cancel", async (req, res)=> {
-    const {id} = req.params;
+router.patch("/:id/cancel", async (req, res) => {
+  try {
+    const { id } = req.params;
 
-    const appointment = await prisma.appointment.findUnique({
-        where: {id}
-    })
+    const service = new CancelAppointmentService();
 
-    if (!appointment) {
-        return res.status(404).json({ error: "Agendamento não encontrado" });
+    const updated = await service.execute(id);
+
+    return res.json(updated);
+  } catch (err: any) {
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({ error: err.message });
     }
 
-    if (appointment.status === "CANCELED") {
-        return res
-        .status(400)
-        .json({ error: "Agendamento já cancelado" });
+    if (err.message) {
+      return res.status(400).json({ error: err.message });
     }
 
-    const updated = await prisma.appointment.update({
-        where: {id},
-        data: {status: "CANCELED"}
-    })
-
-    return res.json(updated)
-
-})
+    return res.status(500).json({ error: "Erro interno" });
+  }
+});
 
 export default router;
