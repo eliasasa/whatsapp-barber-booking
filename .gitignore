@@ -1,5 +1,9 @@
-node_modules
+# Environment
 .env
-dist
 
-/src/generated/prisma
+# WAHA
+sessions/
+
+# Node
+node_modules/
+dist/

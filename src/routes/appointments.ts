@@ -1,64 +1,34 @@
 import { Router } from "express";
-import { prisma } from "../lib/prisma";
+import { CreateAppointmentService } from "../services/createAppointmentService";
 
 const router = Router();
 
-router.post('/', async (req, res) => {
-    try {
-        const {clientId, serviceId, startAt} = req.body;
+router.post("/", async (req, res) => {
+  try {
+    const { clientId, serviceId, startAt } = req.body;
 
-        if (!clientId || !serviceId || !startAt) {
-            return res.status(400).json({error: "Campos obrigatórios ausentes"});
-        };
+    const service = new CreateAppointmentService();
 
-        const start = new Date(startAt);
+    const appointment = await service.execute({
+      clientId,
+      serviceId,
+      startAt,
+    });
 
-        const service = await prisma.service.findUnique({
-            where: {id: serviceId},
-        });
+    return res.json(appointment);
+  } catch (err: any) {
+    console.error(err);
 
-        if (!service) {
-            return res.status(400).json({error: "Serviço não encontrado"})
-        };
-
-        const end = new Date(start.getTime() + service.duration * 60000);
-
-        const conflict = await prisma.appointment.findFirst({
-            where: {
-                status: "CONFIRMED",
-                OR: [{
-                    startAt: {
-                        lt: end
-                    },
-                    endAt: {
-                        gt: start
-                    }
-                }]
-            }
-        })
-
-        if (conflict) {
-            return res.status(409).json({ error: "Horário já ocupado" });
-        }
-
-        const appointment = await prisma.appointment.create({
-            data: {
-                clientId,
-                serviceId,
-                startAt: start,
-                endAt: end,
-                status: "CONFIRMED"
-
-            }
-        });
-
-        return res.json(appointment);
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({ error: err.message });
     }
 
-    catch (err) {
-        console.error(err);
-        return res.status(500).json({error: "Erro interno"})
+    if (err.message) {
+      return res.status(400).json({ error: err.message });
     }
-})
+
+    return res.status(500).json({ error: "Erro interno" });
+  }
+});
 
 export default router;

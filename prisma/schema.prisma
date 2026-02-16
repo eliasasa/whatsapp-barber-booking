@@ -9,7 +9,7 @@ datasource db {
 
 model Availability {
   id        String   @id @default(uuid())
-  weekday   Int     
+  weekday   Int      @unique
   startTime String   
   endTime   String   
 
@@ -39,6 +39,9 @@ model Appointment {
   startAt   DateTime
   endAt     DateTime
   status    AppointmentStatus @default(CONFIRMED)
+
+  address   String?
+  notes     String?
 
   clientId  String
   serviceId String

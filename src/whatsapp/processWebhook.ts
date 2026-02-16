@@ -1,0 +1,108 @@
+import { handleIncomingMessage } from "./handler";
+import { sendMessage } from "./wahaClient";
+import { BOT_START_TIME } from "../global/botState";
+import { checkRateLimit } from "./rateLimiter";
+
+type ConversationState = {
+  lastReply?: string;
+  lastReplyAt?: number;
+};
+
+const conversations = new Map<string, ConversationState>();
+
+export async function processWebhook(body: any) {
+  console.log("📩 Webhook recebido");
+
+  if (!body) {
+    return;
+  }
+
+  const { event, payload, session } = body;
+
+  if (event === "message") {
+    const text: string | undefined = payload?.body;
+    const from: string | undefined = payload?.from;
+    const fromMe: boolean | undefined = payload?.fromMe;
+
+    const receivedTime = Date.now();
+
+    if (!from || !text) {
+        console.log("🚫 Ignorado (mensagem inválida)");
+        return;
+    }
+
+    if (receivedTime < BOT_START_TIME) {
+        console.log("🚫 Ignorado (mensagem anterior ao início do bot)");
+        return;
+    }
+
+    if (fromMe) {
+        console.log("🚫 Ignorado (fromMe)");
+        return;
+    }
+
+    // Bloqueios por tipo de origem
+    if (
+        from.endsWith("@g.us") || // grupo
+        from.endsWith("@broadcast") // lista de transmissão
+    ) {
+        console.log("🚫 Origem não permitida:", from);
+        return;
+    }
+
+    if (!from.endsWith("@c.us")) {
+        console.log("🚫 Origem não permitida:", from);
+        return;
+    }
+
+    console.log("💬 Mensagem recebida:", text);
+
+    const rate = checkRateLimit(from);
+
+    if (rate === "WARN") {
+      await sendMessage({
+        to: from,
+        text:
+          "⚠️ Opa! Você está mandando mensagens muito rápido.\n" +
+          "Vamos continuar em alguns instantes 😉",
+        session: session || "default",
+      });
+      return;
+    }
+
+    if (rate === "BLOCK") {
+      console.log("⏳ Rate limit ativo para", from);
+      return;
+    }
+
+    const reply = await handleIncomingMessage(from, text);
+
+    if (!reply) {
+      return;
+    }
+
+    const state = conversations.get(from);
+
+    if (state?.lastReply === reply) {
+      console.log("🔁 Resposta repetida ignorada");
+      return;
+    }
+
+    conversations.set(from, {
+      lastReply: reply,
+      lastReplyAt: Date.now(),
+    });
+
+    console.log("🤖 Resposta:", reply);
+
+    await sendMessage({
+      to: from,
+      text: reply,
+      session: session || "default",
+    });
+  }
+
+  if (event === "session.status") {
+    console.log("📶 Status da sessão:", payload);
+  }
+}
