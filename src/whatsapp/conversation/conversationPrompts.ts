@@ -2,6 +2,9 @@ import { ConversationStep } from "./conversationTypes";
 import { ConversationData } from "./conversationStore";
 
 export function getPromptForStep(conversation: ConversationData): string {
+
+    console.log("🧠 Step atual:", conversation.step);
+
     switch (conversation.step) {
         case ConversationStep.START:
             return "O que você gostaria de fazer? 😊";

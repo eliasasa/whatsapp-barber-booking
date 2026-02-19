@@ -3,6 +3,7 @@ export type Intent =
     | "BOOK"
     | "CHECK_AVAILABILITY"
     | "CANCEL" 
+    | "LIST_SERVICES"
     | "UNKNOWN";
 
 const INTENT_KEYWORDS: Record<Intent, string[]> = {
@@ -10,6 +11,7 @@ const INTENT_KEYWORDS: Record<Intent, string[]> = {
   BOOK: ["agendar", "marcar", "reservar"],
   CHECK_AVAILABILITY: ["horario", "disponibilidade"],
   CANCEL: ["cancelar", "desmarcar"],
+  LIST_SERVICES: ["servico", "serviços", "preco", "preço", "quanto custa"],
   UNKNOWN: [],
 };
 

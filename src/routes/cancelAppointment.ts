@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { CancelAppointmentService } from "../services/CancelAppointmentService";
+import { CancelAppointmentService } from "../services/appointments/CancelAppointmentService";
 
 const router = Router();
 

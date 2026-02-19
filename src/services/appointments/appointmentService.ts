@@ -1,4 +1,4 @@
-import { prisma } from "../lib/prisma";
+import { prisma } from "../../lib/prisma";
 
 export async function checkTimeConflict(startAt: Date, endAt: Date) {
   const conflict = await prisma.appointment.findFirst({

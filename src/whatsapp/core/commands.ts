@@ -1,4 +1,4 @@
-import { resetConversation, resumeConversation, pauseConversation } from "./conversationStore";
+import { resetConversation, resumeConversation, pauseConversation } from "../conversation/conversationStore";
 
 export type CommandContext = {
     from: string;

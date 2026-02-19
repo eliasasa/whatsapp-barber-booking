@@ -1,21 +1,17 @@
-import { handleIncomingMessage } from "./handler";
+import { handleIncomingMessage } from "./core/handler";
 import { sendMessage } from "./wahaClient";
 import { BOT_START_TIME } from "../global/botState";
-import { checkRateLimit } from "./rateLimiter";
-
-type ConversationState = {
-  lastReply?: string;
-  lastReplyAt?: number;
-};
-
-const conversations = new Map<string, ConversationState>();
+import { checkRateLimit } from "./core/rateLimiter";
+import {
+  getConversation,
+  updateConversation,
+  resetConversation,
+} from "./conversation/conversationStore";
 
 export async function processWebhook(body: any) {
-  console.log("📩 Webhook recebido");
+  // console.log("📩 Webhook recebido");
 
-  if (!body) {
-    return;
-  }
+  if (!body) return;
 
   const { event, payload, session } = body;
 
@@ -23,41 +19,32 @@ export async function processWebhook(body: any) {
     const text: string | undefined = payload?.body;
     const from: string | undefined = payload?.from;
     const fromMe: boolean | undefined = payload?.fromMe;
-
     const receivedTime = Date.now();
 
     if (!from || !text) {
-        console.log("🚫 Ignorado (mensagem inválida)");
-        return;
+      console.log("🚫 Ignorado (mensagem inválida)");
+      return;
     }
 
     if (receivedTime < BOT_START_TIME) {
-        console.log("🚫 Ignorado (mensagem anterior ao início do bot)");
-        return;
+      console.log("🚫 Ignorado (mensagem anterior ao início do bot)");
+      return;
     }
 
     if (fromMe) {
-        console.log("🚫 Ignorado (fromMe)");
-        return;
+      console.log("🚫 Ignorado (fromMe)");
+      return;
     }
 
-    // Bloqueios por tipo de origem
-    if (
-        from.endsWith("@g.us") || // grupo
-        from.endsWith("@broadcast") // lista de transmissão
-    ) {
-        console.log("🚫 Origem não permitida:", from);
-        return;
-    }
-
-    if (!from.endsWith("@c.us")) {
-        console.log("🚫 Origem não permitida:", from);
-        return;
+    if (from.endsWith("@g.us") || from.endsWith("@broadcast") || !from.endsWith("@c.us")) {
+      console.log("🚫 Origem não permitida:", from);
+      return;
     }
 
     console.log("💬 Mensagem recebida:", text);
 
-    const rate = checkRateLimit(from);
+    // ===== RATE LIMIT + REPETIÇÃO =====
+    const rate = checkRateLimit(from, text);
 
     if (rate === "WARN") {
       await sendMessage({
@@ -75,22 +62,30 @@ export async function processWebhook(body: any) {
       return;
     }
 
+    if (rate === "REPEAT_WARN") {
+      await sendMessage({
+        to: from,
+        text:
+          "⚠️ Você está enviando a mesma mensagem repetidamente. Por favor, aguarde ou envie algo diferente.",
+        session: session || "default",
+      });
+      return;
+    }
+
+    if (rate === "REPEAT_BLOCK") {
+      console.log("🔁 Mensagem repetida ignorada para", from);
+      return;
+    }
+
+    const conversation = getConversation(from);
+
+    // ===== FLUXO NORMAL =====
     const reply = await handleIncomingMessage(from, text);
 
-    if (!reply) {
-      return;
-    }
+    if (!reply) return;
 
-    const state = conversations.get(from);
-
-    if (state?.lastReply === reply) {
-      console.log("🔁 Resposta repetida ignorada");
-      return;
-    }
-
-    conversations.set(from, {
-      lastReply: reply,
-      lastReplyAt: Date.now(),
+    updateConversation(from, {
+      lastInteraction: Date.now(),
     });
 
     console.log("🤖 Resposta:", reply);

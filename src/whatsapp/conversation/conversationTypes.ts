@@ -7,3 +7,10 @@ export enum ConversationStep {
   CONFIRM = "CONFIRM",
   DONE = "DONE",
 }
+
+export type ActiveFlow =
+  | "BOOKING"
+  | "CANCEL"
+  | "AVAILABILITY"
+  | "SERVICES"
+  | null;

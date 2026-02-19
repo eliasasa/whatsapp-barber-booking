@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { ListAvailableSlotsService } from "../services/ListAvailableSlotsService";
+import { ListAvailableSlotsService } from "../services/services/ListAvailableSlotsService";
 
 const router = Router();
 
