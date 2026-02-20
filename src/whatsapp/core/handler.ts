@@ -1,8 +1,8 @@
 import { getConversation, updateConversation, clearPendingIntent, resetConversation } from "../conversation/conversationStore";
-import { detectIntent } from "./intents";
+import { detectIntent, Intent } from "./intents";
 import { detectCommand } from "./commandDetector";
 import { COMMANDS } from "./commands";
-import { ConversationStep } from "../conversation/conversationTypes";
+import { ConversationStep, ActiveFlow } from "../conversation/conversationTypes";
 import { getPromptForStep } from "../conversation/conversationPrompts";
 
 import { bookingFlow } from "../flows/booking/bookingFlow";
@@ -11,14 +11,25 @@ import { cancelFlow } from "../flows/cancelFlow";
 import { greetingFlow } from "../flows/greetingFlow";
 import { servicesFlow } from "../flows/servicesFlow";
 
-const FLOW_HANDLERS = {
+// 🔹 Mapeamento de tipos com assinatura explícita
+type FlowHandler = (from: string, text?: string) => Promise<string | null>;
+
+const FLOW_HANDLERS: Record<NonNullable<ActiveFlow>, FlowHandler> = {
   BOOKING: bookingFlow,
   CANCEL: cancelFlow,
   AVAILABILITY: availabilityFlow,
   SERVICES: servicesFlow,
-} as const;
+};
 
-const FLOW_STARTING_INTENTS = ["BOOK", "CHECK_AVAILABILITY", "CANCEL", "LIST_SERVICES"];
+// 🔹 Mapeamento de Flow para Intent correspondente
+const FLOW_TO_INTENT: Record<NonNullable<ActiveFlow>, Intent> = {
+  BOOKING: "BOOK",
+  CANCEL: "CANCEL",
+  AVAILABILITY: "CHECK_AVAILABILITY",
+  SERVICES: "LIST_SERVICES"
+};
+
+const FLOW_STARTING_INTENTS: Intent[] = ["BOOK", "CHECK_AVAILABILITY", "CANCEL", "LIST_SERVICES"];
 
 export async function handleIncomingMessage(
   from: string,
@@ -28,7 +39,7 @@ export async function handleIncomingMessage(
   const messageRaw = text.trim();
   const message = messageRaw.toLowerCase();
 
-  updateConversation(from, { lastInteraction: Date.now()});
+  updateConversation(from, { lastInteraction: Date.now() });
 
   // COMANDOS
   const command = detectCommand(message);
@@ -41,7 +52,42 @@ export async function handleIncomingMessage(
 
   if (conversation.paused) return null;
 
-  // 🔹 CASO TENHA pendingIntent
+  // VERIFICA INTENÇÃO CONFLITANTE (mesmo durante fluxo ativo)
+  if (conversation.flow || conversation.step !== ConversationStep.START) {
+    const intent = detectIntent(message);
+    
+    // Se detectou uma intenção de iniciar novo fluxo E não está em confirmação de pendingIntent
+    if (intent && FLOW_STARTING_INTENTS.includes(intent) && !conversation.pendingIntent) {
+      
+      // Se a intenção for a MESMA do fluxo atual, permite continuar normal
+      if (conversation.flow) {
+        const currentFlowIntent = FLOW_TO_INTENT[conversation.flow];
+        
+        if (currentFlowIntent === intent) {
+          // Continua no fluxo atual (não conflita)
+          const handler = FLOW_HANDLERS[conversation.flow];
+          return handler(from, messageRaw);
+        }
+      }
+      
+      // Intenção diferente do fluxo atual: pergunta se quer trocar
+      updateConversation(from, { pendingIntent: intent });
+      
+      return (
+        "⚠️ Percebi que você quer iniciar outra ação.\n\n" +
+        "Deseja cancelar o fluxo atual e começar um novo?\n" +
+        "Digite 1️⃣ para sim ou 2️⃣ para continuar."
+      );
+    }
+    
+    // Se não detectou intenção conflitante, continua no fluxo normal
+    if (conversation.flow) {
+      const handler = FLOW_HANDLERS[conversation.flow];
+      return handler(from, messageRaw);
+    }
+  }
+
+  // CASO TENHA pendingIntent
   if (conversation.pendingIntent) {
     if (message === "1") {
       // Usuário confirma cancelar o fluxo atual
@@ -65,6 +111,9 @@ export async function handleIncomingMessage(
         case "LIST_SERVICES":
           updateConversation(from, { flow: "SERVICES", step: ConversationStep.START });
           return servicesFlow();
+        
+        default:
+          return greetingFlow(from);
       }
     }
 
@@ -77,32 +126,16 @@ export async function handleIncomingMessage(
     return "Digite 1️⃣ para cancelar o fluxo atual ou 2️⃣ para continuar.";
   }
 
-  // 🔹 CONTINUAR FLUXO ATIVO
-  if (conversation.flow) {
-    const handler = FLOW_HANDLERS[conversation.flow];
+  // CONTINUAR FLUXO ATIVO (sem intenção conflitante)
+  if (conversation.flow !== null && conversation.flow !== undefined) {
+    const flow = conversation.flow as NonNullable<ActiveFlow>;
+    const handler = FLOW_HANDLERS[flow];
     return handler(from, messageRaw);
   }
 
-  // 🔹 DETECTAR NOVA INTENÇÃO
+  // INICIAR NOVO FLUXO
   const intent = detectIntent(message);
 
-  if (
-    conversation.step &&
-    conversation.step !== ConversationStep.START &&
-    intent &&
-    FLOW_STARTING_INTENTS.includes(intent)
-  ) {
-    // salva pendingIntent
-    updateConversation(from, { pendingIntent: intent });
-
-    return (
-      "⚠️ Percebi que você quer iniciar outra ação.\n\n" +
-      "Deseja cancelar o fluxo atual e começar um novo?\n" +
-      "Digite 1️⃣ para sim ou 2️⃣ para continuar."
-    );
-  }
-
-  // 🔹 INICIAR NOVO FLUXO
   switch (intent) {
     case "BOOK":
       updateConversation(from, { flow: "BOOKING", step: ConversationStep.START });

@@ -7,17 +7,17 @@ import { ConversationStep } from "../../conversation/conversationTypes";
 import { confirmBooking } from "../booking/bookingDomain";
 
 // START
-export function handleStart(from: string): string {
+export async function handleStart(from: string): Promise<string | null> {
   updateConversation(from, { step: ConversationStep.ASK_SERVICE });
 
   return "Olá! 👋\nQual serviço você deseja?\n1️⃣ Corte\n2️⃣ Barba";
 }
 
 // ASK_SERVICE
-export function handleServiceStep(
+export async function handleServiceStep(
   from: string,
   messageRaw: string
-): string {
+): Promise<string | null> {
   const message = messageRaw.toLowerCase();
 
   if (message === "1" || message === "2") {
@@ -37,10 +37,10 @@ export function handleServiceStep(
 }
 
 // ASK_DATE
-export function handleDateStep(
+export async function handleDateStep(
   from: string,
   messageRaw: string
-): string {
+): Promise<string | null> {
   const message = messageRaw.toLowerCase();
 
   if (!/^\d{2}\/\d{2}$/.test(message)) {
@@ -56,10 +56,10 @@ export function handleDateStep(
 }
 
 // ASK_TIME
-export function handleTimeStep(
+export async function handleTimeStep(
   from: string,
   messageRaw: string
-): string {
+): Promise<string | null> {
   const message = messageRaw.toLowerCase();
 
   if (!/^\d{2}:\d{2}$/.test(message)) {
@@ -75,10 +75,10 @@ export function handleTimeStep(
 }
 
 // ASK_ADDRESS
-export function handleAddressStep(
+export async function handleAddressStep(
   from: string,
   messageRaw: string
-): string {
+): Promise<string | null> {
   if (!messageRaw.trim()) {
     return "Endereço inválido. Por favor, envie novamente:";
   }
@@ -104,7 +104,7 @@ export function handleAddressStep(
 export async function handleConfirmStep(
   from: string,
   messageRaw: string
-): Promise<string> {
+): Promise<string | null> {
   const message = messageRaw.toLowerCase();
 
   if (message === "2") {

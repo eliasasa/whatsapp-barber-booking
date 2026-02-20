@@ -11,9 +11,8 @@ import {
 
 export async function bookingFlow(
   from: string,
-  messageRaw: string
+  message?: string
 ): Promise<string | null> {
-
   const conversation = getConversation(from);
 
   switch (conversation.step) {
@@ -21,21 +20,21 @@ export async function bookingFlow(
       return handleStart(from);
 
     case ConversationStep.ASK_SERVICE:
-      return handleServiceStep(from, messageRaw);
+      return handleServiceStep(from, message!);
 
     case ConversationStep.ASK_DATE:
-      return handleDateStep(from, messageRaw);
+      return handleDateStep(from, message!);
 
     case ConversationStep.ASK_TIME:
-      return handleTimeStep(from, messageRaw);
+      return handleTimeStep(from, message!);
 
     case ConversationStep.ASK_ADDRESS:
-      return handleAddressStep(from, messageRaw);
+      return handleAddressStep(from, message!);
 
     case ConversationStep.CONFIRM:
-      return handleConfirmStep(from, messageRaw);
+      return handleConfirmStep(from, message!);
 
     default:
-      return handleStart(from);
+      return null;
   }
 }
