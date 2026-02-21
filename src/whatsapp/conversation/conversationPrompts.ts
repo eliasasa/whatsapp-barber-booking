@@ -25,6 +25,9 @@ export function getPromptForStep(conversation: ConversationData): string {
                 `⏰ Horário: ${conversation.time}\n\n` +
                 "Digite 1️⃣ para confirmar ou 2️⃣ para cancelar"
             );
+        
+        case ConversationStep.ASK_ADDRESS:
+            return ("Ótimo ⏰\nAgora me diga o endereço onde deseja ser atendido:")
 
         default:
             return "Vamos continuar 🙂 O que você gostaria de fazer?";

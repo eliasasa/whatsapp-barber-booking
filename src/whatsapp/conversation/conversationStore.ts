@@ -1,3 +1,4 @@
+import { Intent } from "../core/intents";
 import { ConversationStep, ActiveFlow } from "./conversationTypes";
 
 export type ConversationData = {
@@ -6,7 +7,7 @@ export type ConversationData = {
   serviceId?: string;
   date?: string;
   time?: string;
-  pendingIntent?: string;
+  pendingIntent?: Intent;
   paused?: boolean;
   lastInteraction?: number;
   address?: string;
