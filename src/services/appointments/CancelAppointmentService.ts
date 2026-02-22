@@ -1,6 +1,22 @@
 import { prisma } from "../../lib/prisma";
 
 class CancelAppointmentService {
+  async listClientAppointments(phone: string) {
+    const now = new Date();
+
+    return prisma.appointment.findMany({
+      where: {
+        client: { phone },
+        status: "CONFIRMED",
+        startAt: { gte: now },
+      },
+      include: {
+        service: true,
+      },
+      orderBy: { startAt: "asc" },
+    });
+  }
+
   async execute(id: string) {
     const appointment = await prisma.appointment.findUnique({
       where: { id },
@@ -16,12 +32,10 @@ class CancelAppointmentService {
       throw new Error("Agendamento já cancelado");
     }
 
-    const updated = await prisma.appointment.update({
+    return prisma.appointment.update({
       where: { id },
       data: { status: "CANCELED" },
     });
-
-    return updated;
   }
 }
 

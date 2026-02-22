@@ -1,19 +1,16 @@
-# TODO
+## 👤 Identificação de Cliente
 
-## 🧪 Testes Pendentes
-- [ ] Testar novo sistema de rate limit:
-  - [ ] Rate limit normal (15 mensagens/minuto)
-  - [ ] Cooldown entre mensagens (500ms)
-  - [ ] Detecção de mensagens repetidas (3x)
-  - [ ] Reset do contador ao mudar mensagem
-  - [ ] Reset após expirar janela de 60s
-
-## 🔄 Mudança de Intenção em Fluxos Ativos
-- [ ] Implementar detector de intenções conflitantes
-- [ ] Criar fluxo de confirmação para troca de intenção
-- [ ] Preservar dados do fluxo atual (snapshot) para possível retorno
-- [ ] Adicionar comando explícito de "cancelar" ou "voltar"
-- [ ] Testar cenários:
-  - [ ] Usuário no meio de agendamento e envia "cancelar"
-  - [ ] Usuário no meio de cancelamento e envia "agendar"
-  - [ ] Usuário desiste da troca e retorna ao fluxo anterior
+- [ ] Verificar se o número já existe no banco ao iniciar conversa
+- [ ] Se não existir:
+  - [ ] Perguntar o nome do cliente
+  - [ ] Validar se o nome não está vazio
+  - [ ] Salvar nome vinculado ao número
+  - [ ] Continuar fluxo normal após salvar
+- [ ] Se já existir:
+  - [ ] Não perguntar nome novamente
+  - [ ] Usar nome salvo automaticamente no atendimento
+- [ ] Garantir que a pergunta de nome aconteça antes de qualquer outro fluxo
+- [ ] Testar:
+  - [ ] Número novo iniciando conversa
+  - [ ] Número já cadastrado
+  - [ ] Cliente enviando mensagem diferente ao invés do nome

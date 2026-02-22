@@ -14,13 +14,13 @@ import { getPromptForStep } from "../conversation/conversationPrompts";
 
 import { bookingFlow } from "../flows/booking/bookingFlow";
 import { availabilityFlow } from "../flows/availabilityFlow";
-import { cancelFlow } from "../flows/cancelFlow";
+import { cancelFlow } from "../flows/cancel/cancelFlow";
 import { greetingFlow } from "../flows/greetingFlow";
 import { servicesFlow } from "../flows/servicesFlow";
 
-/* ============================================================
-   FLOW REGISTRY
-============================================================ */
+// ============================================================
+//  FLOW REGISTRY
+// ============================================================ 
 
 type FlowHandler = (from: string, text?: string) => Promise<string | null>;
 
@@ -64,9 +64,9 @@ export async function handleIncomingMessage(
 
   updateConversation(from, { lastInteraction: Date.now() });
 
-  /* ------------------------------------------------------------
-    Commands
-  ------------------------------------------------------------ */
+  // ------------------------------------------------------------
+  // Commands
+  // ------------------------------------------------------------
 
   const command = detectCommand(message);
   if (command && COMMANDS[command]) {
@@ -78,9 +78,9 @@ export async function handleIncomingMessage(
 
   if (conversation.paused) return null;
 
-  /* ------------------------------------------------------------
-    Confirmação de intenção
-  ------------------------------------------------------------ */
+  // ------------------------------------------------------------
+  //   Confirmação de intenção
+  // ------------------------------------------------------------
 
   if (conversation.pendingIntent) {
     if (message === "1") {
@@ -112,9 +112,9 @@ export async function handleIncomingMessage(
     return "Digite 1️⃣ para cancelar o fluxo atual ou 2️⃣ para continuar.";
   }
 
-  /* ------------------------------------------------------------
-    Checa conflito de intenção (mid-flow switch)
-  ------------------------------------------------------------ */
+  // ------------------------------------------------------------
+  //   Checa conflito de intenção (mid-flow switch)
+  // ------------------------------------------------------------ 
 
   const detectedIntent = detectIntent(message);
 
@@ -136,18 +136,18 @@ export async function handleIncomingMessage(
     }
   }
 
-  /* ------------------------------------------------------------
-    Continua fluxo ativo
-  ------------------------------------------------------------ */
+  // ------------------------------------------------------------
+  //  Continua fluxo ativo
+  // ------------------------------------------------------------ 
 
   if (conversation.flow) {
     const handler = FLOW_HANDLERS[conversation.flow];
     return handler(from, messageRaw);
   }
 
-  /* ------------------------------------------------------------
-    Novo fluxo
-  ------------------------------------------------------------ */
+  // ------------------------------------------------------------
+  //  Novo fluxo
+  // ------------------------------------------------------------ 
 
   if (detectedIntent && FLOW_STARTING_INTENTS.includes(detectedIntent)) {
     const newFlow = INTENT_TO_FLOW[detectedIntent];
@@ -163,9 +163,9 @@ export async function handleIncomingMessage(
     }
   }
 
-  /* ------------------------------------------------------------
-    Saudação padrão
-  ------------------------------------------------------------ */
+  // ------------------------------------------------------------
+  //  Saudação padrão
+  // ------------------------------------------------------------
 
   return greetingFlow(from);
 }

@@ -23,7 +23,11 @@ export const COMMANDS: Record<string, CommandHandler> = {
         return "🔄 Conversa resetada. Podemos começar novamente.";
     },
 
-    // "#commands": ({ from }) => {
-    //     return "";
-    // },
+    "#commands": () => {
+        const commandList = Object.keys(COMMANDS)
+            .map(cmd => `• ${cmd}`)
+            .join("\n");
+
+        return `📌 Comandos disponíveis:\n\n${commandList}`;
+    },
 };

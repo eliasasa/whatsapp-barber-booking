@@ -1,4 +1,4 @@
-import { listServices } from "../../services/services/ListServicesService";
+import { listServices } from "../../services/catalog/ListServicesService";
 
 export async function servicesFlow(): Promise<string> {
   const services = await listServices();
