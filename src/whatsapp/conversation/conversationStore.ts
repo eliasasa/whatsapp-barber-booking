@@ -4,6 +4,7 @@ import { ConversationStep, ActiveFlow } from "./conversationTypes";
 export type ConversationData = {
   step: ConversationStep;
   flow: ActiveFlow;
+  clientId?: string;
   serviceId?: string;
   date?: string;
   time?: string;
@@ -12,6 +13,9 @@ export type ConversationData = {
   lastInteraction?: number;
   address?: string;
   notes?: string;
+  serviceName?: string;
+  serviceOptions?: Record<string, { id: string; name: string }>;
+  slotOptions?: Record<string, string>;
 };
 
 const CONVERSATION_TTL = 60 * 60 * 1000;

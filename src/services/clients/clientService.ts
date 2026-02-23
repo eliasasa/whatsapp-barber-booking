@@ -16,3 +16,10 @@ export async function getOrCreateClient(phone: string, name?: string) {
 
   return client;
 }
+
+export async function updateClientName(clientId: string, name: string) {
+  return prisma.client.update({
+    where: { id: clientId },
+    data: { name },
+  });
+}

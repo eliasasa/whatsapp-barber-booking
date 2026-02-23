@@ -3,19 +3,41 @@ import { prisma } from "../../lib/prisma";
 interface CreateAppointmentRequest {
   clientId: string;
   serviceId: string;
-  startAt: string;
+  startAt: string; // formato esperado: YYYY-MM-DDTHH:mm
+  address: string;
 }
 
 class CreateAppointmentService {
-  async execute({ clientId, serviceId, startAt }: CreateAppointmentRequest) {
-    if (!clientId || !serviceId || !startAt) {
+  async execute({ clientId, serviceId, startAt, address }: CreateAppointmentRequest) {
+    if (!clientId || !serviceId || !startAt || !address) {
       throw new Error("Campos obrigatórios ausentes");
     }
 
-    const start = new Date(startAt);
+    console.log("START_AT RECEBIDO:", startAt);
+
+    const [datePart, timePart] = startAt.split("T");
+
+    if (!datePart || !timePart) {
+      throw new Error("Formato de data inválido");
+    }
+
+    const [year, month, day] = datePart.split("-").map(Number);
+    const [hour, minute] = timePart.split(":").map(Number);
+
+    const start = new Date();
+    start.setFullYear(year!);
+    start.setMonth(month! - 1);
+    start.setDate(day!);
+    start.setHours(hour!, minute, 0, 0);
 
     if (isNaN(start.getTime())) {
       throw new Error("Data inválida");
+    }
+
+    // Impedir agendamento no passado
+    const now = new Date();
+    if (start < now) {
+      throw new Error("Não é possível agendar no passado");
     }
 
     // Buscar serviço
@@ -40,17 +62,35 @@ class CreateAppointmentService {
       throw new Error("Barbearia fechada neste dia");
     }
 
-    const date = startAt.split("T")[0];
+    // Criar horário de expediente
+    const dayStart = new Date(start);
+    dayStart.setHours(
+      Number(availability.startTime.split(":")[0]),
+      Number(availability.startTime.split(":")[1]),
+      0,
+      0
+    );
 
-    const dayStart = new Date(`${date}T${availability.startTime}`);
-    const dayEnd = new Date(`${date}T${availability.endTime}`);
+    const dayEnd = new Date(start);
+    dayEnd.setHours(
+      Number(availability.endTime.split(":")[0]),
+      Number(availability.endTime.split(":")[1]),
+      0,
+      0
+    );
 
+    // Validar expediente
     if (start < dayStart || end > dayEnd) {
       throw new Error("Horário fora do expediente");
     }
 
-    // Validar alinhamento de slot
-    if (start.getMinutes() % 30 !== 0) {
+    // SLOT FIXO (alinhado ao início do expediente)
+    const SLOT_INTERVAL = 30; // minutos
+
+    const diffFromOpening =
+      (start.getTime() - dayStart.getTime()) / 60000;
+
+    if (diffFromOpening % SLOT_INTERVAL !== 0) {
       throw new Error("Horário inválido");
     }
 
@@ -76,6 +116,7 @@ class CreateAppointmentService {
         serviceId,
         startAt: start,
         endAt: end,
+        address,
         status: "CONFIRMED",
       },
     });

@@ -7,6 +7,7 @@ import {
   handleServiceStep,
   handleStart,
   handleTimeStep,
+  handleNameStep
 } from "../booking/bookingSteps";
 
 export async function bookingFlow(
@@ -18,6 +19,9 @@ export async function bookingFlow(
   switch (conversation.step) {
     case ConversationStep.START:
       return handleStart(from);
+
+    case ConversationStep.ASK_NAME:
+      return handleNameStep(from, message!);
 
     case ConversationStep.ASK_SERVICE:
       return handleServiceStep(from, message!);

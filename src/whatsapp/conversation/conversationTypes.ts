@@ -1,5 +1,6 @@
 export enum ConversationStep {
   START = "START",
+  ASK_NAME = "ASK_NAME",
 
   //Booking
   ASK_SERVICE = "ASK_SERVICE",

@@ -1,9 +1,6 @@
 import { normalizePhone } from "../../../utils/phone";
 import { getOrCreateClient } from "../../../services/clients/clientService";
-import {
-  createAppointment,
-  checkTimeConflict,
-} from "../../../services/appointments/appointmentService";
+import { CreateAppointmentService } from "../../../services/appointments/createAppointmentService";
 import { prisma } from "../../../lib/prisma";
 
 export async function confirmBooking(from: string, conversation: any) {
@@ -14,10 +11,8 @@ export async function confirmBooking(from: string, conversation: any) {
     return { error: "Serviço inválido." };
   }
 
-  const service = await prisma.service.findFirst({
-    where: {
-      name: { equals: conversation.serviceId, mode: "insensitive" },
-    },
+  const service = await prisma.service.findUnique({
+    where: { id: conversation.serviceId },
   });
 
   if (!service) {
@@ -31,27 +26,23 @@ export async function confirmBooking(from: string, conversation: any) {
   const [day, month] = conversation.date.split("/");
   const year = new Date().getFullYear();
 
-  const startAt = new Date(
-    `${year}-${month}-${day}T${conversation.time}:00`
-  );
+  const formattedDay = day.padStart(2, "0");
+  const formattedMonth = month.padStart(2, "0");
 
-  const endAt = new Date(
-    startAt.getTime() + service.duration * 60000
-  );
+  const startAtString = `${year}-${formattedMonth}-${formattedDay}T${conversation.time}`;
 
-  const hasConflict = await checkTimeConflict(startAt, endAt);
+  const appointmentService = new CreateAppointmentService();
 
-  if (hasConflict) {
-    return { conflict: true };
+  try {
+    await appointmentService.execute({
+      clientId: client.id,
+      serviceId: service.id,
+      startAt: startAtString,
+      address: conversation.address,
+    });
+
+    return { success: true };
+  } catch (error: any) {
+    return { error: error.message };
   }
-
-  await createAppointment(
-    client.id,
-    service.id,
-    startAt,
-    endAt,
-    conversation.address ?? undefined
-  );
-
-  return { success: true };
 }
