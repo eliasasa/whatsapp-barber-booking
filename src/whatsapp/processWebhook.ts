@@ -1,4 +1,4 @@
-import { handleIncomingMessage } from "./core/handler";
+import { handleMessage } from "./core/handler";
 import { sendMessage } from "./wahaClient";
 import { BOT_START_TIME } from "../global/botState";
 import { checkRateLimit } from "./core/rateLimiter";
@@ -80,8 +80,8 @@ export async function processWebhook(body: any) {
     const conversation = getConversation(from);
 
     // ===== FLUXO NORMAL =====
-    const reply = await handleIncomingMessage(from, text);
-
+    const reply = await handleMessage(from, text);
+    
     if (!reply) return;
 
     updateConversation(from, {

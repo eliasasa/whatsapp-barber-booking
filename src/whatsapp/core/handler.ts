@@ -7,9 +7,9 @@ import {
 
 import { detectIntent, Intent } from "./intents";
 import { detectCommand } from "./commandDetector";
-import { COMMANDS } from "./commands";
 
 import { ConversationStep, ActiveFlow } from "../conversation/conversationTypes";
+import { FlowContext, FlowResponse } from "./flowTypes";
 
 import { bookingFlow } from "../flows/booking/bookingFlow";
 import { availabilityFlow } from "../flows/availabilityFlow";
@@ -17,17 +17,13 @@ import { cancelFlow } from "../flows/cancel/cancelFlow";
 import { greetingFlow } from "../flows/greetingFlow";
 import { servicesFlow } from "../flows/servicesFlow";
 
-// ============================================================
-//  FLOW REGISTRY
-// ============================================================ 
-
-type FlowHandler = (from: string, text?: string) => Promise<string | null>;
+type FlowHandler = (ctx: FlowContext) => Promise<FlowResponse | null>;
 
 const FLOW_HANDLERS: Record<NonNullable<ActiveFlow>, FlowHandler> = {
-  BOOKING: bookingFlow,
-  CANCEL: cancelFlow,
-  AVAILABILITY: availabilityFlow,
-  SERVICES: servicesFlow,
+  BOOKING: bookingFlow as any, 
+  CANCEL: cancelFlow as any,
+  AVAILABILITY: availabilityFlow as any,
+  SERVICES: servicesFlow as any,
 };
 
 const FLOW_TO_INTENT: Record<NonNullable<ActiveFlow>, Intent> = {
@@ -37,10 +33,10 @@ const FLOW_TO_INTENT: Record<NonNullable<ActiveFlow>, Intent> = {
   SERVICES: "LIST_SERVICES",
 };
 
-const INTENT_TO_FLOW: Record<Intent, ActiveFlow> = {
+const INTENT_TO_FLOW: Record<Intent, ActiveFlow | null> = {
   BOOK: "BOOKING",
-  CHECK_AVAILABILITY: "AVAILABILITY",
   CANCEL: "CANCEL",
+  CHECK_AVAILABILITY: "AVAILABILITY",
   LIST_SERVICES: "SERVICES",
   GREETING: null,
   UNKNOWN: null,
@@ -48,83 +44,69 @@ const INTENT_TO_FLOW: Record<Intent, ActiveFlow> = {
 
 const FLOW_STARTING_INTENTS: Intent[] = [
   "BOOK",
-  "CHECK_AVAILABILITY",
   "CANCEL",
+  "CHECK_AVAILABILITY",
   "LIST_SERVICES",
 ];
 
-export async function handleIncomingMessage(
+export async function handleMessage(
   from: string,
-  text: string
+  messageRaw: string
 ): Promise<string | null> {
+  const message = messageRaw.trim();
   const conversation = getConversation(from);
-  const messageRaw = text.trim();
-  const message = messageRaw.toLowerCase();
 
-  updateConversation(from, { lastInteraction: Date.now() });
-
-  // ------------------------------------------------------------
-  // Commands
-  // ------------------------------------------------------------
-
+  // Executa comandos diretos (ex: !cancelar) se o detector encontrar um handler válido
   const command = detectCommand(message);
-  if (command && COMMANDS[command]) {
-    return COMMANDS[command]({
-      from,
-      isPaused: !!conversation.paused,
-    });
+  if (command && typeof command === "function") {
+    // @ts-ignore - Ignoramos a tipagem antiga do comando por enquanto
+    return await command(from, messageRaw);
   }
 
-  if (conversation.paused) return null;
+  const detectedIntent = await detectIntent(message);
 
-  // ------------------------------------------------------------
-  //   Confirmação de intenção
-  // ------------------------------------------------------------
-
+  // Se o usuário está no meio de uma confirmação para trocar de assunto
   if (conversation.pendingIntent) {
     if (message === "1") {
-      const newIntent = conversation.pendingIntent;
-      resetConversation(from);
+      const newFlow = INTENT_TO_FLOW[conversation.pendingIntent];
+      clearPendingIntent(from);
 
-      const newFlow = INTENT_TO_FLOW[newIntent];
       if (newFlow) {
         updateConversation(from, {
           flow: newFlow,
           step: ConversationStep.START,
         });
 
+        const ctx: FlowContext = { from, message: messageRaw, conversation: getConversation(from) };
         const handler = FLOW_HANDLERS[newFlow];
-        return handler(from, messageRaw);
-      }
+        const response = await handler(ctx);
 
-      return greetingFlow(from);
+        if (response) {
+          if (response.endFlow) {
+            resetConversation(from);
+          } else {
+            updateConversation(from, { lastBotMessage: response.message });
+          }
+          return response.message;
+        }
+      }
+      return "Entendido. Vamos recomeçar. O que deseja fazer?";
     }
 
     if (message === "2") {
       clearPendingIntent(from);
-      
-      const currentConversation = getConversation(from);
-      const lastMessage = currentConversation.lastBotMessage || "O que você gostaria de fazer?";
-
-      return (
-        "Beleza 😄 Vamos continuar de onde paramos.\n\n" +
-        lastMessage
-      );
+      const lastMessage = conversation.lastBotMessage || "O que você gostaria de fazer?";
+      return "Beleza 😄 Vamos continuar de onde paramos.\n\n" + lastMessage;
     }
 
-    return "Digite 1️⃣ para cancelar o fluxo atual ou 2️⃣ para continuar.";
+    return "Por favor, digite 1️⃣ para mudar de assunto ou 2️⃣ para continuar o que estávamos fazendo.";
   }
 
-  // ------------------------------------------------------------
-  //   Checa conflito de intenção (mid-flow switch)
-  // ------------------------------------------------------------ 
-
-  const detectedIntent = detectIntent(message);
-
+  // Percebeu que o usuário quer mudar de assunto do nada
   if (
-    conversation.flow &&
-    detectedIntent &&
-    FLOW_STARTING_INTENTS.includes(detectedIntent)
+    detectedIntent !== "UNKNOWN" &&
+    detectedIntent !== "GREETING" &&
+    conversation.flow
   ) {
     const currentIntent = FLOW_TO_INTENT[conversation.flow];
 
@@ -139,28 +121,26 @@ export async function handleIncomingMessage(
     }
   }
 
-  // ------------------------------------------------------------
-  //  Continua fluxo ativo
-  // ------------------------------------------------------------ 
+  const ctx: FlowContext = { from, message: messageRaw, conversation };
 
+  // Continua o assunto que já estava rolando
   if (conversation.flow) {
     const handler = FLOW_HANDLERS[conversation.flow];
-    const response = await handler(from, messageRaw);
+    const response = await handler(ctx);
 
     if (response !== null) {
-      // Salva a resposta dinâmica gerada pelo bookingSteps
-      updateConversation(from, { lastBotMessage: response });
-      return response;
+      if (response.endFlow) {
+        resetConversation(from);
+      } else {
+        updateConversation(from, { lastBotMessage: response.message });
+      }
+      return response.message;
     }
 
-    // Se o handler retornar null, usamos a última mensagem salva
-    return getConversation(from).lastBotMessage || "Vamos continuar 🙂 O que você gostaria de fazer?";
+    return conversation.lastBotMessage || "Vamos continuar 🙂 O que você gostaria de fazer?";
   }
 
-  // ------------------------------------------------------------
-  //  Novo fluxo
-  // ------------------------------------------------------------ 
-
+  // Começa um assunto novo do zero
   if (detectedIntent && FLOW_STARTING_INTENTS.includes(detectedIntent)) {
     const newFlow = INTENT_TO_FLOW[detectedIntent];
 
@@ -170,21 +150,32 @@ export async function handleIncomingMessage(
         step: ConversationStep.START,
       });
 
+      ctx.conversation = getConversation(from); 
+      
       const handler = FLOW_HANDLERS[newFlow];
-      const response = await handler(from, messageRaw);
+      const response = await handler(ctx);
       
       if (response !== null) {
-        // Salva a primeira mensagem do novo fluxo
-        updateConversation(from, { lastBotMessage: response });
+        if (response.endFlow) {
+          resetConversation(from);
+        } else {
+          updateConversation(from, { lastBotMessage: response.message });
+        }
+        return response.message;
       }
-      
-      return response;
     }
   }
 
-  // ------------------------------------------------------------
-  //  Saudação padrão
-  // ------------------------------------------------------------
+  // Se for um oi, saudação ou se não tiver nada ativo
+  if (detectedIntent === "GREETING" || !conversation.flow) {
+    // Como greetingFlow ainda usa a estrutura antiga, passamos apenas o 'from'
+    const response = await greetingFlow(from); 
+    const msg = response || "Olá! Como posso ajudar?";
+    
+    updateConversation(from, { lastBotMessage: msg });
+    return msg;
+  }
 
-  return greetingFlow(from);
+  const lastMessage = conversation.lastBotMessage || "O que você gostaria de fazer?";
+  return "Desculpe, não entendi. 😅\n\n" + lastMessage;
 }
