@@ -13,6 +13,9 @@ export enum ConversationStep {
   //Cancel
   ASK_CANCEL_SELECTION = "ASK_CANCEL_SELECTION",
   CONFIRM_CANCEL = "CONFIRM_CANCEL",
+
+  
+  ASK_AVAILABILITY_DATE = "ASK_AVAILABILITY_DATE",
 }
 
 export type ActiveFlow =

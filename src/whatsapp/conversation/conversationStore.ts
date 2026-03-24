@@ -16,6 +16,7 @@ export type ConversationData = {
   serviceName?: string;
   serviceOptions?: Record<string, { id: string; name: string }>;
   slotOptions?: Record<string, string>;
+  lastBotMessage?: string;
 };
 
 const CONVERSATION_TTL = 60 * 60 * 1000;

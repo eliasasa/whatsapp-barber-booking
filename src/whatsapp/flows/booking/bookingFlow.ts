@@ -39,6 +39,6 @@ export async function bookingFlow(
       return handleConfirmStep(from, message!);
 
     default:
-      return null;
+      return handleStart(from);
   }
 }

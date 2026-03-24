@@ -10,7 +10,6 @@ import { detectCommand } from "./commandDetector";
 import { COMMANDS } from "./commands";
 
 import { ConversationStep, ActiveFlow } from "../conversation/conversationTypes";
-import { getPromptForStep } from "../conversation/conversationPrompts";
 
 import { bookingFlow } from "../flows/booking/bookingFlow";
 import { availabilityFlow } from "../flows/availabilityFlow";
@@ -103,9 +102,13 @@ export async function handleIncomingMessage(
 
     if (message === "2") {
       clearPendingIntent(from);
+      
+      const currentConversation = getConversation(from);
+      const lastMessage = currentConversation.lastBotMessage || "O que você gostaria de fazer?";
+
       return (
         "Beleza 😄 Vamos continuar de onde paramos.\n\n" +
-        getPromptForStep(conversation)
+        lastMessage
       );
     }
 
@@ -142,7 +145,16 @@ export async function handleIncomingMessage(
 
   if (conversation.flow) {
     const handler = FLOW_HANDLERS[conversation.flow];
-    return handler(from, messageRaw);
+    const response = await handler(from, messageRaw);
+
+    if (response !== null) {
+      // Salva a resposta dinâmica gerada pelo bookingSteps
+      updateConversation(from, { lastBotMessage: response });
+      return response;
+    }
+
+    // Se o handler retornar null, usamos a última mensagem salva
+    return getConversation(from).lastBotMessage || "Vamos continuar 🙂 O que você gostaria de fazer?";
   }
 
   // ------------------------------------------------------------
@@ -159,7 +171,14 @@ export async function handleIncomingMessage(
       });
 
       const handler = FLOW_HANDLERS[newFlow];
-      return handler(from, messageRaw);
+      const response = await handler(from, messageRaw);
+      
+      if (response !== null) {
+        // Salva a primeira mensagem do novo fluxo
+        updateConversation(from, { lastBotMessage: response });
+      }
+      
+      return response;
     }
   }
 
