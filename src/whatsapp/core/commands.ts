@@ -1,4 +1,4 @@
-import { resetConversation, resumeConversation, pauseConversation } from "./conversationStore";
+import { resetConversation, resumeConversation, pauseConversation } from "../conversation/conversationStore";
 
 export type CommandContext = {
     from: string;
@@ -23,7 +23,11 @@ export const COMMANDS: Record<string, CommandHandler> = {
         return "🔄 Conversa resetada. Podemos começar novamente.";
     },
 
-    // "#commands": ({ from }) => {
-    //     return "";
-    // },
+    "#commands": () => {
+        const commandList = Object.keys(COMMANDS)
+            .map(cmd => `• ${cmd}`)
+            .join("\n");
+
+        return `📌 Comandos disponíveis:\n\n${commandList}`;
+    },
 };
