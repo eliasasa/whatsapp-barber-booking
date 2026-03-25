@@ -1,50 +1,45 @@
-# WhatsApp Barber Booking
+# 🤖 WhatsApp Barber Booking
 
-![GitHub](https://img.shields.io/github/license/eliasasa/whatsapp-barber-booking) ![GitHub repo size](https://img.shields.io/github/repo-size/eliasasa/whatsapp-barber-booking) ![GitHub stars](https://img.shields.io/github/stars/eliasasa/whatsapp-barber-booking) ![GitHub forks](https://img.shields.io/github/forks/eliasasa/whatsapp-barber-booking)
+![Build Status](https://img.shields.io/badge/build-passing-green)
+![Version](https://img.shields.io/badge/version-1.0.0-blue)
 
-## Table of Contents
+## 📚 Table of Contents
 - [Introduction](#introduction)
 - [Features](#features)
-- [Installation](#installation)
+- [Getting Started](#getting-started)
 - [Usage](#usage)
 - [Troubleshooting](#troubleshooting)
-- [License](#license)
+- [Author](#author)
 
-## Introduction
-This project aims to simplify the process of booking appointments for barbershops via WhatsApp.
+## 📖 Introduction
+This project allows barbers to manage bookings through WhatsApp efficiently. 
 
-## Features
-- Easy appointment scheduling
-- Automated reminders
+## 🚀 Features
+- Instant booking through WhatsApp
+- Notifications for customers
 - User-friendly interface
 
-## Installation
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/eliasasa/whatsapp-barber-booking.git
-   ```
-2. Navigate to the project directory:
-   ```bash
-   cd whatsapp-barber-booking
-   ```
-3. Install the required dependencies:
-   ```bash
-   npm install
-   ```
-
-## Usage
-Run the application with:
+## ⚙️ Getting Started
+To get started, clone the repository:
 ```bash
+git clone https://github.com/eliasasa/whatsapp-barber-booking.git
+cd whatsapp-barber-booking
+```
+
+## 💡 Usage
+Run the application:
+```bash
+npm install
 npm start
 ```
 
-## Troubleshooting
-### Common Issues
-- **Issue:** Application does not start.
-  **Solution:** Ensure that all dependencies are installed and your environment variables are set correctly.
+## 🛠️ Troubleshooting
+If you encounter any issues, please check the following:
+- Ensure you have the latest version of Node.js installed.
+- Verify that all environment variables are set correctly.
+- Check the logs for any error messages.
 
-- **Issue:** App crashes on booking.
-  **Solution:** Check the console for errors and ensure all data fields are correctly filled.
-
-## License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+## 👤 Author
+- **Elias Asa**  
+GitHub: [eliasasa](https://github.com/eliasasa)  
+LinkedIn: [Elias Asa](https://linkedin.com/in/eliasasa)  
