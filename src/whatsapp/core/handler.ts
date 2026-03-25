@@ -17,7 +17,7 @@ import { cancelFlow } from "../flows/cancel/cancelFlow";
 import { greetingFlow } from "../flows/greetingFlow";
 import { servicesFlow } from "../flows/servicesFlow";
 
-type FlowHandler = (ctx: FlowContext) => Promise<FlowResponse | null>;
+type FlowHandler = (from: string, message?: string) => Promise<string | null | FlowResponse>;
 
 const FLOW_HANDLERS: Record<NonNullable<ActiveFlow>, FlowHandler> = {
   BOOKING: bookingFlow as any, 
@@ -79,15 +79,16 @@ export async function handleMessage(
 
         const ctx: FlowContext = { from, message: messageRaw, conversation: getConversation(from) };
         const handler = FLOW_HANDLERS[newFlow];
-        const response = await handler(ctx);
+        const response = await handler(from, messageRaw);
 
         if (response) {
-          if (response.endFlow) {
+          const msgText = typeof response === 'string' ? response : response.message;
+          if (typeof response === 'object' && response.endFlow) {
             resetConversation(from);
           } else {
-            updateConversation(from, { lastBotMessage: response.message });
+            updateConversation(from, { lastBotMessage: msgText });
           }
-          return response.message;
+          return msgText;
         }
       }
       return "Entendido. Vamos recomeçar. O que deseja fazer?";
@@ -126,15 +127,16 @@ export async function handleMessage(
   // Continua o assunto que já estava rolando
   if (conversation.flow) {
     const handler = FLOW_HANDLERS[conversation.flow];
-    const response = await handler(ctx);
+    const response = await handler(from, messageRaw);
 
     if (response !== null) {
-      if (response.endFlow) {
+      const msgText = typeof response === 'string' ? response : response.message;
+      if (typeof response === 'object' && response.endFlow) {
         resetConversation(from);
       } else {
-        updateConversation(from, { lastBotMessage: response.message });
+        updateConversation(from, { lastBotMessage: msgText });
       }
-      return response.message;
+      return msgText;
     }
 
     return conversation.lastBotMessage || "Vamos continuar 🙂 O que você gostaria de fazer?";
@@ -153,15 +155,16 @@ export async function handleMessage(
       ctx.conversation = getConversation(from); 
       
       const handler = FLOW_HANDLERS[newFlow];
-      const response = await handler(ctx);
+      const response = await handler(from, messageRaw);
       
       if (response !== null) {
-        if (response.endFlow) {
+        const msgText = typeof response === 'string' ? response : response.message;
+        if (typeof response === 'object' && response.endFlow) {
           resetConversation(from);
         } else {
-          updateConversation(from, { lastBotMessage: response.message });
+          updateConversation(from, { lastBotMessage: msgText });
         }
-        return response.message;
+        return msgText;
       }
     }
   }
