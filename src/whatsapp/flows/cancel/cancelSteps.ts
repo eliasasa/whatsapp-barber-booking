@@ -31,7 +31,7 @@ export async function handleStartCancel(from: string) {
     message += `${index + 1}️. ${a.service.name} - ${date} às ${time}\n`;
   });
 
-  message += "\nDigite o número do agendamento que deseja cancelar.";
+  message += "\nDigite o número do agendamento que deseja cancelar.\nOu digite 0 para desistir.";
 
   return message;
 }
@@ -42,10 +42,16 @@ export async function handleCancelSelection(from: string, message: string) {
   const conversation = getConversation(from);
   const ids: string[] = conversation.notes ? JSON.parse(conversation.notes) : [];
 
+  // Opção para desistir de cancelar
+  if (message === "0") {
+    resetConversation(from);
+    return "Cancelamento desistido. O que você gostaria de fazer? 😊";
+  }
+
   const index = parseInt(message);
 
   if (isNaN(index) || index < 1 || index > ids.length) {
-    return "Número inválido. Escolha um agendamento da lista.";
+    return "Número inválido. Escolha um agendamento da lista ou digite 0 para desistir.";
   }
 
   const appointmentId = ids[index - 1]!;
@@ -55,7 +61,7 @@ export async function handleCancelSelection(from: string, message: string) {
     serviceId: appointmentId,
   });
 
-  return "Tem certeza que deseja cancelar?\nDigite 1️⃣ para confirmar ou 2️⃣ para voltar.";
+  return "Tem certeza que deseja cancelar?\nDigite 1 para confirmar, 2 para voltar à lista, ou 3 para desistir.";
 }
 
 /* -------------------------------------------------- */
@@ -80,8 +86,13 @@ export async function handleCancelConfirmation(from: string, message: string) {
       step: ConversationStep.ASK_CANCEL_SELECTION,
     });
 
-    return "Escolha novamente o número do agendamento.";
+    return "Escolha novamente o número do agendamento ou digite 0 para desistir.";
   }
 
-  return "Digite 1️⃣ para confirmar ou 2️⃣ para voltar.";
+  if (message === "3") {
+    resetConversation(from);
+    return "Cancelamento desistido. O que você gostaria de fazer? 😊";
+  }
+
+  return "Digite 1 para confirmar, 2 para voltar à lista, ou 3 para desistir.";
 }
