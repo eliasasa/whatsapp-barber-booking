@@ -1,6 +1,6 @@
 services:
   waha:
-    image: devlikeapro/waha:latest
+    image: devlikeapro/waha:2026.2.1
     container_name: waha
     ports:
       - "3001:3000"
