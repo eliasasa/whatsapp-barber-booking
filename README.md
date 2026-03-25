@@ -1,5 +1,11 @@
 # 💈 WhatsApp Barber Booking
 
+![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
+![NodeJS](https://img.shields.io/badge/node.js-6DA55F?style=for-the-badge&logo=node.js&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-3982CE?style=for-the-badge&logo=Prisma&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/postgresql-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white)
+![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
+
 Sistema de agendamento para barbearia via WhatsApp, com backend em Node.js, TypeScript, Prisma, PostgreSQL e integração com WAHA. O bot conversa com o cliente, cadastra dados, mostra serviços, consulta horários disponíveis, agenda e cancela compromissos.
 
 ---
@@ -40,6 +46,22 @@ Sistema de agendamento para barbearia via WhatsApp, com backend em Node.js, Type
 5. Os fluxos (`booking`, `availability`, `cancel`, `services`) chamam services de negócio.
 6. Os services usam Prisma para persistir ou consultar dados.
 7. O backend responde ao cliente pelo WAHA.
+
+```mermaid
+sequenceDiagram
+    participant U as Usuário (WhatsApp)
+    participant W as WAHA (Docker)
+    participant B as Backend (Express)
+    participant DB as Postgres (Prisma)
+    
+    U->>W: Envia mensagem
+    W->>B: Webhook (POST /webhook/waha)
+    B->>B: Identifica Intent & Step atual
+    B->>DB: Consulta/Atualiza Dados
+    DB-->>B: Retorna Dados (Ex: Horários)
+    B->>W: Dispara Resposta (Axios)
+    W-->>U: Recebe mensagem
+```
 
 📌 A conversa é mantida em memória enquanto o processo está ativo.
 
@@ -337,6 +359,10 @@ docs/adr-001-cloudflare-tunnel.md
 * Documentação OpenAPI/Swagger
 
 ---
+
+## 📝 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
 
 ## 👨‍💻 Autor
 
