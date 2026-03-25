@@ -6,8 +6,11 @@ import cancelAppointmentRoutes from "./routes/cancelAppointment";
 import rescheduleAppointmentRoutes from "./routes/rescheduleAppointment";
 import dailyAgendaRoutes from "./routes/dailyAgenda";
 import webhookRoutes from "./routes/webhook";
+import cors from "cors";
 
 export const app = express();
+
+app.use(cors());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
