@@ -66,6 +66,10 @@ export async function handleMessage(
     }
   }
 
+  if (conversation.paused) {
+    return null;
+  }
+
   const detectedIntent = await detectIntent(message);
 
   // Se o usuário está no meio de uma confirmação para trocar de assunto
