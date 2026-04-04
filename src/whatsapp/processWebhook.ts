@@ -15,6 +15,11 @@ export async function processWebhook(body: any) {
 
   const { event, payload, session } = body;
 
+  const isPrivateChatId = (chatId?: string): boolean => {
+    if (!chatId) return false;
+    return chatId.endsWith("@c.us") || chatId.endsWith("@lid");
+  };
+
   if (event === "message") {
     const text: string | undefined = payload?.body;
     const from: string | undefined = payload?.from;
@@ -36,9 +41,13 @@ export async function processWebhook(body: any) {
       return;
     }
 
-    if (from.endsWith("@g.us") || from.endsWith("@broadcast") || !from.endsWith("@c.us")) {
+    if (from.endsWith("@g.us") || from.endsWith("@broadcast") || !isPrivateChatId(from)) {
       console.log("🚫 Origem não permitida:", from);
       return;
+    }
+
+    if (from.endsWith("@lid")) {
+      console.log("ℹ️ Mensagem recebida via LID:", from);
     }
 
     console.log("💬 Mensagem recebida:", text);

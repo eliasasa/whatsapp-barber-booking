@@ -1,16 +1,15 @@
 import { updateConversation, resetConversation, getConversation } from "../../conversation/conversationStore";
 import { ConversationStep } from "../../conversation/conversationTypes";
-import { normalizePhone } from "../../../utils/phone";
 import { CancelAppointmentService } from "../../../services/appointments/CancelAppointmentService";
+import { getOrCreateClientFromChatId } from "../../../services/clients/clientService";
 
 const service = new CancelAppointmentService();
 
 /* -------------------------------------------------- */
 
 export async function handleStartCancel(from: string) {
-  const phone = normalizePhone(from);
-
-  const appointments = await service.listClientAppointments(phone);
+  const client = await getOrCreateClientFromChatId(from);
+  const appointments = await service.listClientAppointments(client.id);
 
   if (!appointments.length) {
     resetConversation(from);

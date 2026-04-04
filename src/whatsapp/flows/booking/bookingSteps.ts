@@ -6,7 +6,7 @@ import {
 import { ConversationStep } from "../../conversation/conversationTypes";
 import { confirmBooking } from "../booking/bookingDomain";
 import {
-  getOrCreateClient,
+  getOrCreateClientFromChatId,
   updateClientName,
 } from "../../../services/clients/clientService";
 import { ListAvailableSlotsService } from "../../../services/catalog/ListAvailableSlotsService";
@@ -62,8 +62,7 @@ async function buildServiceMenu(clientName: string) {
 ====================================================== */
 
 export async function handleStart(from: string): Promise<string | null> {
-  const phone = from.replace("@c.us", "");
-  const client = await getOrCreateClient(phone);
+  const client = await getOrCreateClientFromChatId(from);
 
   if (!client.name) {
     updateConversation(from, {
