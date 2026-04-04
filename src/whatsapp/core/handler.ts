@@ -7,6 +7,7 @@ import {
 
 import { detectIntent, Intent } from "./intents";
 import { detectCommand } from "./commandDetector";
+import { COMMANDS } from "./commands";
 
 import { ConversationStep, ActiveFlow } from "../conversation/conversationTypes";
 import { FlowContext, FlowResponse } from "./flowTypes";
@@ -56,11 +57,13 @@ export async function handleMessage(
   const message = messageRaw.trim();
   const conversation = getConversation(from);
 
-  // Executa comandos diretos (ex: !cancelar) se o detector encontrar um handler válido
+  // Executa comandos diretos (#pause, #resume, #reset, #commands)
   const command = detectCommand(message);
-  if (command && typeof command === "function") {
-    // @ts-ignore - Ignoramos a tipagem antiga do comando por enquanto
-    return await command(from, messageRaw);
+  if (command) {
+    const handler = COMMANDS[command];
+    if (handler) {
+      return handler({ from, isPaused: Boolean(conversation.paused) });
+    }
   }
 
   const detectedIntent = await detectIntent(message);
