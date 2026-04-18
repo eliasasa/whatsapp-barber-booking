@@ -73,6 +73,33 @@ export async function updateClientName(clientId: string, name: string) {
   });
 }
 
+type UpdateClientFromPanelInput = {
+  clientId: string;
+  name?: string;
+  notes?: string | null;
+};
+
+export async function updateClientFromPanel({
+  clientId,
+  name,
+  notes,
+}: UpdateClientFromPanelInput) {
+  const data: { name?: string; notes?: string | null } = {};
+
+  if (typeof name === "string") {
+    data.name = name;
+  }
+
+  if (typeof notes === "string" || notes === null) {
+    data.notes = notes;
+  }
+
+  return prisma.client.update({
+    where: { id: clientId },
+    data,
+  });
+}
+
 export async function getClientById(clientId: string) {
   return prisma.client.findUnique({
     where: { id: clientId },

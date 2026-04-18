@@ -19,6 +19,7 @@ model Availability {
 model Client {
   id        String   @id @default(uuid())
   name      String?
+  notes     String?
   phone     String   @unique
   createdAt DateTime @default(now())
 

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getClientById, updateClientName } from "../services/clients/clientService";
+import { getClientById, updateClientFromPanel } from "../services/clients/clientService";
 
 const router = Router();
 
@@ -27,13 +27,49 @@ router.get("/:id", async (req, res) => {
 router.patch("/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { name } = req.body;
+    const { name, notes } = req.body;
 
-    if (!name || typeof name !== "string") {
+    const hasName = typeof name === "string";
+    const hasNotes = typeof notes === "string" || notes === null;
+
+    if (!hasName && !hasNotes) {
+      return res.status(400).json({ error: "Envie name e/ou notes" });
+    }
+
+    if (name !== undefined && typeof name !== "string") {
       return res.status(400).json({ error: "Nome invalido" });
     }
 
-    const updatedClient = await updateClientName(id, name.trim());
+    if (notes !== undefined && notes !== null && typeof notes !== "string") {
+      return res.status(400).json({ error: "Notes invalido" });
+    }
+
+    const trimmedName = typeof name === "string" ? name.trim() : undefined;
+
+    if (trimmedName !== undefined && !trimmedName) {
+      return res.status(400).json({ error: "Nome invalido" });
+    }
+
+    const normalizedNotes = typeof notes === "string" ? notes.trim() : notes;
+
+    const updateInput: {
+      clientId: string;
+      name?: string;
+      notes?: string | null;
+    } = {
+      clientId: id,
+    };
+
+    if (trimmedName !== undefined) {
+      updateInput.name = trimmedName;
+    }
+
+    if (normalizedNotes !== undefined) {
+      updateInput.notes = normalizedNotes;
+    }
+
+    const updatedClient = await updateClientFromPanel(updateInput);
+
     return res.json(updatedClient);
   } catch (err: any) {
     if (err.code === "P2025") {
