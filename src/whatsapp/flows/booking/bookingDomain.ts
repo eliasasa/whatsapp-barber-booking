@@ -1,11 +1,9 @@
-import { normalizePhone } from "../../../utils/phone";
-import { getOrCreateClient } from "../../../services/clients/clientService";
+import { getOrCreateClientFromChatId } from "../../../services/clients/clientService";
 import { CreateAppointmentService } from "../../../services/appointments/createAppointmentService";
 import { prisma } from "../../../lib/prisma";
 
 export async function confirmBooking(from: string, conversation: any) {
-  const phone = normalizePhone(from);
-  const client = await getOrCreateClient(phone);
+  const client = await getOrCreateClientFromChatId(from);
 
   if (!conversation.serviceId) {
     return { error: "Serviço inválido." };

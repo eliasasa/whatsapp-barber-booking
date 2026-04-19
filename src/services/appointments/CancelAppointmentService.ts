@@ -1,12 +1,12 @@
 import { prisma } from "../../lib/prisma";
 
 class CancelAppointmentService {
-  async listClientAppointments(phone: string) {
+  async listClientAppointments(clientId: string) {
     const now = new Date();
 
     return prisma.appointment.findMany({
       where: {
-        client: { phone },
+        clientId,
         status: "CONFIRMED",
         startAt: { gte: now },
       },

@@ -1,11 +1,24 @@
 import { Router } from "express";
 import { CreateAppointmentService } from "../services/appointments/createAppointmentService";
+import { ListAppointmentsService } from "../services/appointments/ListAppointmentsService";
 
 const router = Router();
 
+router.get("/", async (_req, res) => {
+  try {
+    const service = new ListAppointmentsService();
+    const appointments = await service.execute();
+
+    return res.json(appointments);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Erro interno" });
+  }
+});
+
 router.post("/", async (req, res) => {
   try {
-    const { clientId, serviceId, startAt } = req.body;
+    const { clientId, serviceId, startAt, address } = req.body;
 
     const service = new CreateAppointmentService();
 
@@ -13,6 +26,7 @@ router.post("/", async (req, res) => {
       clientId,
       serviceId,
       startAt,
+      address,
     });
 
     return res.json(appointment);
