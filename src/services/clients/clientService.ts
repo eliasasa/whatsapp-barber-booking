@@ -26,7 +26,7 @@ export async function getOrCreateClientFromChatId(
 ) {
   const fallbackKey = normalizePhone(chatId);
 
-  // Fluxo clássico com @c.us: já temos número confiável.
+  // Fluxo clássico com @c.us
   if (chatId.endsWith("@c.us")) {
     return getOrCreateClient(fallbackKey, name);
   }
@@ -70,5 +70,48 @@ export async function updateClientName(clientId: string, name: string) {
   return prisma.client.update({
     where: { id: clientId },
     data: { name },
+  });
+}
+
+type UpdateClientFromPanelInput = {
+  clientId: string;
+  name?: string;
+  notes?: string | null;
+};
+
+export async function updateClientFromPanel({
+  clientId,
+  name,
+  notes,
+}: UpdateClientFromPanelInput) {
+  const data: { name?: string; notes?: string | null } = {};
+
+  if (typeof name === "string") {
+    data.name = name;
+  }
+
+  if (typeof notes === "string" || notes === null) {
+    data.notes = notes;
+  }
+
+  return prisma.client.update({
+    where: { id: clientId },
+    data,
+  });
+}
+
+export async function getClientById(clientId: string) {
+  return prisma.client.findUnique({
+    where: { id: clientId },
+    include: {
+      appointments: {
+        orderBy: {
+          startAt: "desc",
+        },
+        include: {
+          service: true,
+        },
+      },
+    },
   });
 }
