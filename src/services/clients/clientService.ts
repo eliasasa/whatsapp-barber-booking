@@ -66,6 +66,34 @@ export async function getOrCreateClientFromChatId(
   return getOrCreateClient(fallbackKey, name);
 }
 
+export async function findClientByChatId(chatId: string, session = "default") {
+  const fallbackKey = normalizePhone(chatId);
+
+  if (chatId.endsWith("@c.us")) {
+    return prisma.client.findUnique({
+      where: { phone: fallbackKey },
+    });
+  }
+
+  const resolvedPhone = chatId.endsWith("@lid")
+    ? await resolvePhoneFromLid(chatId, session)
+    : null;
+
+  if (resolvedPhone) {
+    const existingByRealPhone = await prisma.client.findUnique({
+      where: { phone: resolvedPhone },
+    });
+
+    if (existingByRealPhone) {
+      return existingByRealPhone;
+    }
+  }
+
+  return prisma.client.findUnique({
+    where: { phone: fallbackKey },
+  });
+}
+
 export async function updateClientName(clientId: string, name: string) {
   return prisma.client.update({
     where: { id: clientId },
@@ -73,18 +101,20 @@ export async function updateClientName(clientId: string, name: string) {
   });
 }
 
-type UpdateClientFromPanelInput = {
+type UpdateClientFromAdminInput = {
   clientId: string;
   name?: string;
   notes?: string | null;
+  botDisabled?: boolean;
 };
 
-export async function updateClientFromPanel({
+export async function updateClientFromAdmin({
   clientId,
   name,
   notes,
-}: UpdateClientFromPanelInput) {
-  const data: { name?: string; notes?: string | null } = {};
+  botDisabled,
+}: UpdateClientFromAdminInput) {
+  const data: { name?: string; notes?: string | null; botDisabled?: boolean } = {};
 
   if (typeof name === "string") {
     data.name = name;
@@ -94,9 +124,44 @@ export async function updateClientFromPanel({
     data.notes = notes;
   }
 
+  if (typeof botDisabled === "boolean") {
+    data.botDisabled = botDisabled;
+  }
+
   return prisma.client.update({
     where: { id: clientId },
     data,
+  });
+}
+
+type UpsertClientByPhoneFromAdminInput = {
+  phone: string;
+  name?: string;
+  notes?: string | null;
+  botDisabled: boolean;
+};
+
+export async function upsertClientByPhoneFromAdmin({
+  phone,
+  name,
+  notes,
+  botDisabled,
+}: UpsertClientByPhoneFromAdminInput) {
+  const normalizedPhone = normalizePhone(phone);
+
+  return prisma.client.upsert({
+    where: { phone: normalizedPhone },
+    create: {
+      phone: normalizedPhone,
+      name: name ?? null,
+      notes: notes ?? null,
+      botDisabled,
+    },
+    update: {
+      ...(typeof name === "string" ? { name } : {}),
+      ...(notes !== undefined ? { notes } : {}),
+      botDisabled,
+    },
   });
 }
 
@@ -114,4 +179,13 @@ export async function getClientById(clientId: string) {
       },
     },
   });
+}
+
+export async function isClientBotDisabledByChatId(
+  chatId: string,
+  session = "default"
+): Promise<boolean> {
+  const client = await findClientByChatId(chatId, session);
+  const maybeBotDisabled = (client as { botDisabled?: boolean } | null)?.botDisabled;
+  return Boolean(maybeBotDisabled);
 }

@@ -20,6 +20,7 @@ model Client {
   id        String   @id @default(uuid())
   name      String?
   notes     String?
+  botDisabled Boolean @default(false)
   phone     String   @unique
   createdAt DateTime @default(now())
 

@@ -2,6 +2,7 @@ import { handleMessage } from "./core/handler";
 import { sendMessage } from "./wahaClient";
 import { BOT_START_TIME } from "../global/botState";
 import { checkRateLimit } from "./core/rateLimiter";
+import { isClientBotDisabledByChatId } from "../services/clients/clientService";
 import {
   getConversation,
   updateConversation,
@@ -48,6 +49,16 @@ export async function processWebhook(body: any) {
 
     if (from.endsWith("@lid")) {
       console.log("ℹ️ Mensagem recebida via LID:", from);
+    }
+
+    const isBlockedByPanel = await isClientBotDisabledByChatId(
+      from,
+      session || "default"
+    );
+
+    if (isBlockedByPanel) {
+      console.log("⛔ Bot desativado para este numero (painel):", from);
+      return;
     }
 
     console.log("💬 Mensagem recebida:", text);
