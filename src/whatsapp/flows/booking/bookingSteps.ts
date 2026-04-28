@@ -9,7 +9,12 @@ import {
   getOrCreateClientFromChatId,
   updateClientName,
 } from "../../../services/clients/clientService";
-import { ListAvailableSlotsService } from "../../../services/catalog/ListAvailableSlotsService";
+import {
+  ListAvailableSlotsService,
+} from "../../../services/catalog/ListAvailableSlotsService";
+import {
+  getDayAvailability,
+} from "../../../services/availability/ListAvailableSlotsService";
 import { prisma } from "../../../lib/prisma";
 
 /* ======================================================
@@ -21,6 +26,7 @@ const MAX_VISIBLE_SERVICES = 10;
 async function buildServiceMenu(clientName: string) {
   const services = await prisma.service.findMany({
     orderBy: { name: "asc" },
+    distinct: ["name"],
   });
 
   if (!services.length) {
@@ -210,6 +216,20 @@ export async function handleDateStep(
   }
 
   const isoDate = dateObj.toISOString().split("T")[0];
+
+  const dayAvailability = await getDayAvailability(message);
+
+  if (dayAvailability.status === "unavailable") {
+    const why = dayAvailability.reasons.length
+      ? dayAvailability.reasons.map((reason) => `• ${reason}`).join("\n")
+      : "• Sem atendimento configurado para essa data.";
+
+    return (
+      `🚫 ${message} não terá atendimento.\n\n` +
+      `Motivo:\n${why}\n\n` +
+      "Escolha outra data (ex: 25/02)."
+    );
+  }
 
   const slotService = new ListAvailableSlotsService();
   const slots = await slotService.execute({
