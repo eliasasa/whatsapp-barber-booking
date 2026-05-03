@@ -32,6 +32,7 @@ model Service {
   name         String
   duration     Int
   price        Int?
+  paused       Boolean       @default(false)
 
   appointments Appointment[]
 }
