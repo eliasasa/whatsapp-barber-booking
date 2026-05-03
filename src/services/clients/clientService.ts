@@ -181,6 +181,18 @@ export async function getClientById(clientId: string) {
   });
 }
 
+export async function getAllClients() {
+  return prisma.client.findMany({
+    orderBy: { createdAt: "desc" },
+    include: {
+      appointments: {
+        orderBy: { startAt: "desc" },
+        include: { service: true },
+      },
+    },
+  });
+}
+
 export async function isClientBotDisabledByChatId(
   chatId: string,
   session = "default"

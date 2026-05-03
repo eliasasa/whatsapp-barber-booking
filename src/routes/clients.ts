@@ -4,6 +4,7 @@ import {
   updateClientFromAdmin,
   upsertClientByPhoneFromAdmin,
 } from "../services/clients/clientService";
+import { getAllClients } from "../services/clients/clientService";
 
 const router = Router();
 
@@ -37,6 +38,19 @@ router.post("/block-by-phone", async (req, res) => {
     });
 
     return res.json(updated);
+  } catch (err: any) {
+    if (err.message) {
+      return res.status(400).json({ error: err.message });
+    }
+
+    return res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+router.get("/", async (req, res) => {
+  try {
+    const clients = await getAllClients();
+    return res.json(clients);
   } catch (err: any) {
     if (err.message) {
       return res.status(400).json({ error: err.message });
