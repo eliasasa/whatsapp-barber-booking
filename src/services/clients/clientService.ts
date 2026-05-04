@@ -193,6 +193,33 @@ export async function getAllClients() {
   });
 }
 
+export async function getBlockedClients() {
+  return prisma.client.findMany({
+    where: { botDisabled: true },
+    orderBy: { createdAt: "desc" },
+    include: {
+      appointments: {
+        orderBy: { startAt: "desc" },
+        include: { service: true },
+      },
+    },
+  });
+}
+
+export async function blockClientById(clientId: string) {
+  return prisma.client.update({
+    where: { id: clientId },
+    data: { botDisabled: true },
+  });
+}
+
+export async function unblockClientById(clientId: string) {
+  return prisma.client.update({
+    where: { id: clientId },
+    data: { botDisabled: false },
+  });
+}
+
 export async function isClientBotDisabledByChatId(
   chatId: string,
   session = "default"

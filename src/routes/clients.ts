@@ -1,6 +1,9 @@
 import { Router } from "express";
 import {
   getClientById,
+  getBlockedClients,
+  blockClientById,
+  unblockClientById,
   updateClientFromAdmin,
   upsertClientByPhoneFromAdmin,
 } from "../services/clients/clientService";
@@ -50,6 +53,19 @@ router.post("/block-by-phone", async (req, res) => {
 router.get("/", async (req, res) => {
   try {
     const clients = await getAllClients();
+    return res.json(clients);
+  } catch (err: any) {
+    if (err.message) {
+      return res.status(400).json({ error: err.message });
+    }
+
+    return res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+router.get("/blocked", async (_req, res) => {
+  try {
+    const clients = await getBlockedClients();
     return res.json(clients);
   } catch (err: any) {
     if (err.message) {
@@ -138,6 +154,42 @@ router.patch("/:id", async (req, res) => {
     const updatedClient = await updateClientFromAdmin(updateInput);
 
     return res.json(updatedClient);
+  } catch (err: any) {
+    if (err.code === "P2025") {
+      return res.status(404).json({ error: "Cliente nao encontrado" });
+    }
+
+    if (err.message) {
+      return res.status(400).json({ error: err.message });
+    }
+
+    return res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+router.post("/:id/block", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updated = await blockClientById(id);
+    return res.json(updated);
+  } catch (err: any) {
+    if (err.code === "P2025") {
+      return res.status(404).json({ error: "Cliente nao encontrado" });
+    }
+
+    if (err.message) {
+      return res.status(400).json({ error: err.message });
+    }
+
+    return res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+router.post("/:id/unblock", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updated = await unblockClientById(id);
+    return res.json(updated);
   } catch (err: any) {
     if (err.code === "P2025") {
       return res.status(404).json({ error: "Cliente nao encontrado" });
