@@ -24,7 +24,7 @@ router.patch("/greeting", async (req, res) => {
     }
 
     const updated = await updateGreetingMessage(content);
-    return res.json(updated);
+    return res.json({ key: "GREETING", content: updated.content });
   } catch (err: any) {
     if (err.message) {
       return res.status(400).json({ error: err.message });
