@@ -65,6 +65,14 @@ model BotMessage {
   updatedAt DateTime     @updatedAt
 }
 
+model BotState {
+  id        String   @id @default(uuid())
+  paused    Boolean  @default(false)
+  lastPing  DateTime?
+
+  updatedAt DateTime @updatedAt
+}
+
 model AvailabilityBlock {
   id        String   @id @default(uuid())
   startAt   DateTime
