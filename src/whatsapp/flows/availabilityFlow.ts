@@ -4,7 +4,7 @@ import {
   resetConversation,
 } from "../conversation/conversationStore";
 import { ConversationStep } from "../conversation/conversationTypes";
-import { listAvailableSlots } from "../../services/availability/ListAvailableSlotsService";
+import { getDayAvailability } from "../../services/availability/ListAvailableSlotsService";
 
 export async function availabilityFlow(
   from: string,
@@ -42,24 +42,46 @@ export async function availabilityFlow(
       }
 
       try {
-        const slots = await listAvailableSlots(text);
+        const availability = await getDayAvailability(text);
 
-        if (!slots.length) {
+        if (availability.status === "invalid") {
           const response =
-            "😕 Não há horários disponíveis nesse dia.\n\n" +
+            "📅 Data inválida.\nUse o formato DD/MM (ex: 25/02).";
+
+          updateConversation(from, { lastBotMessage: response });
+          return response;
+        }
+
+        if (availability.status === "unavailable") {
+          const why = availability.reasons.length
+            ? availability.reasons.map((reason) => `• ${reason}`).join("\n")
+            : "• Sem atendimento configurado para essa data.";
+
+          const response =
+            `🚫 ${text} não terá atendimento.\n\n` +
+            `Motivo:\n${why}\n\n` +
             "👉 Quer tentar outra data? Me diga o dia 😊";
 
           updateConversation(from, { lastBotMessage: response });
           return response;
         }
 
-        const formatted = slots
+        const formatted = availability.slots
           .map((s) => `🕒 ${s}`)
           .join("\n");
+
+        const reasonText = availability.reasons.length
+          ? "\n\nMotivo do ajuste:\n" + availability.reasons.map((reason) => `• ${reason}`).join("\n")
+          : "";
 
         const response =
           `📅 Horários disponíveis para ${text}:\n\n` +
           `${formatted}\n\n` +
+          reasonText +
+          (availability.status === "partial"
+            ? "\n\n⚠️ Esse dia tem bloqueios parciais, então nem todos os horários ficam disponíveis."
+            : "") +
+          "\n\n" +
           "👉 Para agendar, digite *Agendar*\n" +
           "👉 Ou me diga outra data para consultar 😊";
 

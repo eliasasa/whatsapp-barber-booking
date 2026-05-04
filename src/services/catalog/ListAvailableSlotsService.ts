@@ -36,10 +36,20 @@ class ListAvailableSlotsService {
       },
     });
 
+    const dayStart = new Date(`${date}T${availability.startTime}`);
+    const dayEnd = new Date(`${date}T${availability.endTime}`);
+
+    const blocks = await prisma.availabilityBlock.findMany({
+      where: {
+        startAt: { lt: dayEnd },
+        endAt: { gt: dayStart },
+      },
+    });
+
     const slots: string[] = [];
 
-    let current = new Date(`${date}T${availability.startTime}`);
-    const end = new Date(`${date}T${availability.endTime}`);
+    let current = new Date(dayStart);
+    const end = new Date(dayEnd);
 
     const SLOT_INTERVAL = 30;
 
@@ -52,7 +62,11 @@ class ListAvailableSlotsService {
         return current < appointment.endAt && slotEnd > appointment.startAt;
       });
 
-      if (!conflict) {
+      const conflictWithBlock = blocks.some((block) => {
+        return current < block.endAt && slotEnd > block.startAt;
+      });
+
+      if (!conflict && !conflictWithBlock) {
         slots.push(
           current.toLocaleTimeString("pt-BR", {
             hour: "2-digit",

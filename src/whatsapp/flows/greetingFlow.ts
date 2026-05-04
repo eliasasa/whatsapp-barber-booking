@@ -1,5 +1,5 @@
-import { replies } from "../replies";
+import { getGreetingMessage } from "../../services/botMessages/botMessageService";
 
 export async function greetingFlow(_from: string): Promise<string | null> {
-  return replies.greeting;
+  return getGreetingMessage();
 }

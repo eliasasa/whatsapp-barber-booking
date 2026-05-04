@@ -9,7 +9,12 @@ import {
   getOrCreateClientFromChatId,
   updateClientName,
 } from "../../../services/clients/clientService";
-import { ListAvailableSlotsService } from "../../../services/catalog/ListAvailableSlotsService";
+import {
+  ListAvailableSlotsService,
+} from "../../../services/catalog/ListAvailableSlotsService";
+import {
+  getDayAvailability,
+} from "../../../services/availability/ListAvailableSlotsService";
 import { prisma } from "../../../lib/prisma";
 
 /* ======================================================
@@ -20,7 +25,9 @@ const MAX_VISIBLE_SERVICES = 10;
 
 async function buildServiceMenu(clientName: string) {
   const services = await prisma.service.findMany({
+    where: { paused: false },
     orderBy: { name: "asc" },
+    distinct: ["name"],
   });
 
   if (!services.length) {
@@ -157,6 +164,15 @@ export async function handleServiceStep(
     return "Escolha uma opção válida ou digite o nome do serviço.";
   }
 
+  const serviceRecord = await prisma.service.findUnique({
+    where: { id: selectedService.id },
+  });
+
+  if (!serviceRecord || serviceRecord.paused) {
+    resetConversation(from);
+    return "⚠️ Esse serviço está pausado no momento. Escolha outro serviço.";
+  }
+
   updateConversation(from, {
     step: ConversationStep.ASK_DATE,
     serviceId: selectedService.id,
@@ -209,7 +225,30 @@ export async function handleDateStep(
     return "Erro inesperado. Vamos começar novamente.";
   }
 
+  const service = await prisma.service.findUnique({
+    where: { id: conversation.serviceId },
+  });
+
+  if (!service || service.paused) {
+    resetConversation(from);
+    return "⚠️ Esse serviço foi pausado. Escolha outro serviço para continuar.";
+  }
+
   const isoDate = dateObj.toISOString().split("T")[0];
+
+  const dayAvailability = await getDayAvailability(message);
+
+  if (dayAvailability.status === "unavailable") {
+    const why = dayAvailability.reasons.length
+      ? dayAvailability.reasons.map((reason) => `• ${reason}`).join("\n")
+      : "• Sem atendimento configurado para essa data.";
+
+    return (
+      `🚫 ${message} não terá atendimento.\n\n` +
+      `Motivo:\n${why}\n\n` +
+      "Escolha outra data (ex: 25/02)."
+    );
+  }
 
   const slotService = new ListAvailableSlotsService();
   const slots = await slotService.execute({

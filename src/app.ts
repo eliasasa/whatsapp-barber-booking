@@ -7,6 +7,8 @@ import rescheduleAppointmentRoutes from "./routes/rescheduleAppointment";
 import dailyAgendaRoutes from "./routes/dailyAgenda";
 import webhookRoutes from "./routes/webhook";
 import clientsRoutes from "./routes/clients";
+import botMessagesRoutes from "./routes/botMessages";
+import servicesRoutes from "./routes/services";
 import cors from "cors";
 
 export const app = express();
@@ -33,5 +35,9 @@ app.use("/appointments", rescheduleAppointmentRoutes);
 app.use("/agenda", dailyAgendaRoutes);
 
 app.use("/clients", clientsRoutes);
+
+app.use("/bot-messages", botMessagesRoutes);
+
+app.use("/services", servicesRoutes);
 
 app.use("/webhook", webhookRoutes);

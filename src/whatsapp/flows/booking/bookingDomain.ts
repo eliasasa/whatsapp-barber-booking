@@ -17,6 +17,10 @@ export async function confirmBooking(from: string, conversation: any) {
     return { error: "Serviço não encontrado." };
   }
 
+  if (service.paused) {
+    return { error: "Esse serviço está pausado no momento." };
+  }
+
   if (!conversation.date || !conversation.time) {
     return { error: "Dados inválidos." };
   }
