@@ -25,6 +25,7 @@ const MAX_VISIBLE_SERVICES = 10;
 
 async function buildServiceMenu(clientName: string) {
   const services = await prisma.service.findMany({
+    where: { paused: false },
     orderBy: { name: "asc" },
     distinct: ["name"],
   });
@@ -163,6 +164,15 @@ export async function handleServiceStep(
     return "Escolha uma opção válida ou digite o nome do serviço.";
   }
 
+  const serviceRecord = await prisma.service.findUnique({
+    where: { id: selectedService.id },
+  });
+
+  if (!serviceRecord || serviceRecord.paused) {
+    resetConversation(from);
+    return "⚠️ Esse serviço está pausado no momento. Escolha outro serviço.";
+  }
+
   updateConversation(from, {
     step: ConversationStep.ASK_DATE,
     serviceId: selectedService.id,
@@ -213,6 +223,15 @@ export async function handleDateStep(
   if (!conversation.serviceId) {
     resetConversation(from);
     return "Erro inesperado. Vamos começar novamente.";
+  }
+
+  const service = await prisma.service.findUnique({
+    where: { id: conversation.serviceId },
+  });
+
+  if (!service || service.paused) {
+    resetConversation(from);
+    return "⚠️ Esse serviço foi pausado. Escolha outro serviço para continuar.";
   }
 
   const isoDate = dateObj.toISOString().split("T")[0];
