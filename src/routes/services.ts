@@ -3,6 +3,32 @@ import { prisma } from "../lib/prisma";
 
 const router = Router();
 
+router.get("/", async (req, res) => {
+  try {
+    const services = await prisma.service.findMany({
+      orderBy: { name: "asc" },
+    });
+
+    return res.json(services);
+  } catch (err: any) {
+    if (err.message) return res.status(400).json({ error: err.message });
+    return res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+router.get("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const service = await prisma.service.findUnique({ where: { id } });
+
+    if (!service) return res.status(404).json({ error: "Serviço não encontrado" });
+    return res.json(service);
+  } catch (err: any) {
+    if (err.message) return res.status(400).json({ error: err.message });
+    return res.status(500).json({ error: "Erro interno" });
+  }
+});
+
 router.post("/", async (req, res) => {
   try {
     const { name, duration, price } = req.body;
