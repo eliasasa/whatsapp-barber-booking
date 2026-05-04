@@ -4,6 +4,7 @@ import {
   getBlockedClients,
   blockClientById,
   unblockClientById,
+  deleteClientById,
   updateClientFromAdmin,
   upsertClientByPhoneFromAdmin,
 } from "../services/clients/clientService";
@@ -190,6 +191,24 @@ router.post("/:id/unblock", async (req, res) => {
     const { id } = req.params;
     const updated = await unblockClientById(id);
     return res.json(updated);
+  } catch (err: any) {
+    if (err.code === "P2025") {
+      return res.status(404).json({ error: "Cliente nao encontrado" });
+    }
+
+    if (err.message) {
+      return res.status(400).json({ error: err.message });
+    }
+
+    return res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+router.delete("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await deleteClientById(id);
+    return res.json({ ok: true, deleted });
   } catch (err: any) {
     if (err.code === "P2025") {
       return res.status(404).json({ error: "Cliente nao encontrado" });

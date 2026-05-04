@@ -220,6 +220,12 @@ export async function unblockClientById(clientId: string) {
   });
 }
 
+export async function deleteClientById(clientId: string) {
+  return prisma.client.delete({
+    where: { id: clientId },
+  });
+}
+
 export async function isClientBotDisabledByChatId(
   chatId: string,
   session = "default"
