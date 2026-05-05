@@ -221,8 +221,9 @@ export async function unblockClientById(clientId: string) {
 }
 
 export async function deleteClientById(clientId: string) {
-  return prisma.client.delete({
-    where: { id: clientId },
+  return prisma.$transaction(async (tx) => {
+    await tx.appointment.deleteMany({ where: { clientId } });
+    return tx.client.delete({ where: { id: clientId } });
   });
 }
 
