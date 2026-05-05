@@ -1,6 +1,7 @@
 import express from "express";
 import appointmentRoutes from "./routes/appointments";
 import availabilityRoutes from "./routes/availability";
+import availabilityBlocksRoutes from "./routes/availabilityBlocks";
 import availabilitySlotsRoutes from "./routes/availabilitySlots";
 import cancelAppointmentRoutes from "./routes/cancelAppointment";
 import rescheduleAppointmentRoutes from "./routes/rescheduleAppointment";
@@ -26,6 +27,8 @@ app.get("/health", (_req, res) => {
 app.use("/appointments", appointmentRoutes);
 
 app.use("/availability", availabilityRoutes);
+
+app.use("/availability-blocks", availabilityBlocksRoutes);
 
 app.use("/availability-slots", availabilitySlotsRoutes);
 
