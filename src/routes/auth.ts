@@ -4,6 +4,7 @@ import {
   setupFirstAdminUser,
 } from "../services/auth/authService";
 import { requireAdminAuth } from "../middleware/requireAdminAuth";
+import { loginRateLimiter } from "../middleware/loginRateLimiter";
 
 const router = Router();
 
@@ -49,7 +50,7 @@ router.post("/setup", async (req, res) => {
   }
 });
 
-router.post("/login", async (req, res) => {
+router.post("/login", loginRateLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
 
