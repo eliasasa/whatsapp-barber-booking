@@ -21,7 +21,7 @@ model Client {
   name      String?
   notes     String?
   botDisabled Boolean @default(false)
-  phone     String   @unique
+  phone     String?  @unique
   createdAt DateTime @default(now())
 
   appointments Appointment[]

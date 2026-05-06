@@ -193,6 +193,33 @@ export async function getAllClients() {
   });
 }
 
+export async function createClientFromAdmin({
+  name,
+  phone,
+  notes,
+}: {
+  name: string;
+  phone?: string | null;
+  notes?: string | null;
+}) {
+  const normalizedPhone = phone ? normalizePhone(phone) : undefined;
+
+  const data: { name?: string | null; phone?: string | null; notes?: string | null } = {};
+  data.name = name ?? null;
+
+  if (normalizedPhone !== undefined && normalizedPhone !== "") {
+    data.phone = normalizedPhone;
+  } else {
+    data.phone = null;
+  }
+
+  data.notes = notes ?? null;
+
+  return prisma.client.create({
+    data,
+  });
+}
+
 export async function getBlockedClients() {
   return prisma.client.findMany({
     where: { botDisabled: true },
