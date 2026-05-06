@@ -7,8 +7,9 @@ import {
   deleteClientById,
   updateClientFromAdmin,
   upsertClientByPhoneFromAdmin,
+  createClientFromAdmin,
+  getAllClients,
 } from "../services/clients/clientService";
-import { getAllClients } from "../services/clients/clientService";
 
 const router = Router();
 
@@ -43,6 +44,42 @@ router.post("/block-by-phone", async (req, res) => {
 
     return res.json(updated);
   } catch (err: any) {
+    if (err.message) {
+      return res.status(400).json({ error: err.message });
+    }
+
+    return res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+router.post("/", async (req, res) => {
+  try {
+    const { name, phone, notes } = req.body;
+
+    if (!name || typeof name !== "string") {
+      return res.status(400).json({ error: "Nome invalido" });
+    }
+
+    if (phone !== undefined && phone !== null && typeof phone !== "string") {
+      return res.status(400).json({ error: "Telefone invalido" });
+    }
+
+    if (notes !== undefined && notes !== null && typeof notes !== "string") {
+      return res.status(400).json({ error: "Notes invalido" });
+    }
+
+    const created = await createClientFromAdmin({
+      name: name.trim(),
+      phone: phone ? phone.trim() : null,
+      notes: notes ? notes.trim() : null,
+    });
+
+    return res.status(201).json(created);
+  } catch (err: any) {
+    if (err.code === "P2002") {
+      return res.status(400).json({ error: "Telefone ja cadastrado" });
+    }
+
     if (err.message) {
       return res.status(400).json({ error: err.message });
     }
