@@ -1,7 +1,10 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma";
+import { requireAdminAuth } from "../middleware/requireAdminAuth";
 
 const router = Router();
+
+router.use(requireAdminAuth);
 
 // GET /availability-blocks - List all availability blocks
 router.get("/", async (_req, res) => {

@@ -1,7 +1,30 @@
 import { prisma } from "../src/lib/prisma";
 import { BOT_NAME } from "../src/global/botConfig";
+import bcrypt from "bcryptjs";
 
 async function main() {
+  const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const adminPassword = process.env.ADMIN_PASSWORD?.trim();
+  const adminName = process.env.ADMIN_NAME?.trim() || null;
+
+  if (adminEmail && adminPassword) {
+    const passwordHash = await bcrypt.hash(adminPassword, 12);
+
+    await prisma.adminUser.upsert({
+      where: { email: adminEmail },
+      update: {
+        name: adminName,
+        passwordHash,
+        active: true,
+      },
+      create: {
+        email: adminEmail,
+        name: adminName,
+        passwordHash,
+      },
+    });
+  }
+
   // Services
   await prisma.service.createMany({
     data: [

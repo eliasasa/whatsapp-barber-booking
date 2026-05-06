@@ -10,8 +10,11 @@ import {
   createClientFromAdmin,
   getAllClients,
 } from "../services/clients/clientService";
+import { requireAdminAuth } from "../middleware/requireAdminAuth";
 
 const router = Router();
+
+router.use(requireAdminAuth);
 
 router.post("/block-by-phone", async (req, res) => {
   try {

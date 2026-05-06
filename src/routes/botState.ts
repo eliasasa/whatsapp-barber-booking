@@ -1,8 +1,11 @@
 import { Router } from "express";
 import { getBotState, updateBotState } from "../services/botState/botStateService";
 import { clearAllConversations } from "../whatsapp/conversation/conversationStore";
+import { requireAdminAuth } from "../middleware/requireAdminAuth";
 
 const router = Router();
+
+router.use(requireAdminAuth);
 
 router.get("/state", async (_req, res) => {
   try {

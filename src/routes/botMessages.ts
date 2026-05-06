@@ -3,8 +3,11 @@ import {
   getGreetingMessage,
   updateGreetingMessage,
 } from "../services/botMessages/botMessageService";
+import { requireAdminAuth } from "../middleware/requireAdminAuth";
 
 const router = Router();
+
+router.use(requireAdminAuth);
 
 router.get("/greeting", async (_req, res) => {
   try {
