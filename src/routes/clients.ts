@@ -1,12 +1,20 @@
 import { Router } from "express";
 import {
   getClientById,
+  getBlockedClients,
+  blockClientById,
+  unblockClientById,
+  deleteClientById,
   updateClientFromAdmin,
   upsertClientByPhoneFromAdmin,
+  createClientFromAdmin,
+  getAllClients,
 } from "../services/clients/clientService";
-import { getAllClients } from "../services/clients/clientService";
+import { requireAdminAuth } from "../middleware/requireAdminAuth";
 
 const router = Router();
+
+router.use(requireAdminAuth);
 
 router.post("/block-by-phone", async (req, res) => {
   try {
@@ -47,9 +55,58 @@ router.post("/block-by-phone", async (req, res) => {
   }
 });
 
+router.post("/", async (req, res) => {
+  try {
+    const { name, phone, notes } = req.body;
+
+    if (!name || typeof name !== "string") {
+      return res.status(400).json({ error: "Nome invalido" });
+    }
+
+    if (phone !== undefined && phone !== null && typeof phone !== "string") {
+      return res.status(400).json({ error: "Telefone invalido" });
+    }
+
+    if (notes !== undefined && notes !== null && typeof notes !== "string") {
+      return res.status(400).json({ error: "Notes invalido" });
+    }
+
+    const created = await createClientFromAdmin({
+      name: name.trim(),
+      phone: phone ? phone.trim() : null,
+      notes: notes ? notes.trim() : null,
+    });
+
+    return res.status(201).json(created);
+  } catch (err: any) {
+    if (err.code === "P2002") {
+      return res.status(400).json({ error: "Telefone ja cadastrado" });
+    }
+
+    if (err.message) {
+      return res.status(400).json({ error: err.message });
+    }
+
+    return res.status(500).json({ error: "Erro interno" });
+  }
+});
+
 router.get("/", async (req, res) => {
   try {
     const clients = await getAllClients();
+    return res.json(clients);
+  } catch (err: any) {
+    if (err.message) {
+      return res.status(400).json({ error: err.message });
+    }
+
+    return res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+router.get("/blocked", async (_req, res) => {
+  try {
+    const clients = await getBlockedClients();
     return res.json(clients);
   } catch (err: any) {
     if (err.message) {
@@ -138,6 +195,60 @@ router.patch("/:id", async (req, res) => {
     const updatedClient = await updateClientFromAdmin(updateInput);
 
     return res.json(updatedClient);
+  } catch (err: any) {
+    if (err.code === "P2025") {
+      return res.status(404).json({ error: "Cliente nao encontrado" });
+    }
+
+    if (err.message) {
+      return res.status(400).json({ error: err.message });
+    }
+
+    return res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+router.post("/:id/block", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updated = await blockClientById(id);
+    return res.json(updated);
+  } catch (err: any) {
+    if (err.code === "P2025") {
+      return res.status(404).json({ error: "Cliente nao encontrado" });
+    }
+
+    if (err.message) {
+      return res.status(400).json({ error: err.message });
+    }
+
+    return res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+router.post("/:id/unblock", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updated = await unblockClientById(id);
+    return res.json(updated);
+  } catch (err: any) {
+    if (err.code === "P2025") {
+      return res.status(404).json({ error: "Cliente nao encontrado" });
+    }
+
+    if (err.message) {
+      return res.status(400).json({ error: err.message });
+    }
+
+    return res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+router.delete("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await deleteClientById(id);
+    return res.json({ ok: true, deleted });
   } catch (err: any) {
     if (err.code === "P2025") {
       return res.status(404).json({ error: "Cliente nao encontrado" });

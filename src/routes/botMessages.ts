@@ -3,8 +3,11 @@ import {
   getGreetingMessage,
   updateGreetingMessage,
 } from "../services/botMessages/botMessageService";
+import { requireAdminAuth } from "../middleware/requireAdminAuth";
 
 const router = Router();
+
+router.use(requireAdminAuth);
 
 router.get("/greeting", async (_req, res) => {
   try {
@@ -24,7 +27,7 @@ router.patch("/greeting", async (req, res) => {
     }
 
     const updated = await updateGreetingMessage(content);
-    return res.json(updated);
+    return res.json({ key: "GREETING", content: updated.content });
   } catch (err: any) {
     if (err.message) {
       return res.status(400).json({ error: err.message });

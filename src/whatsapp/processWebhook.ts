@@ -3,6 +3,7 @@ import { sendMessage } from "./wahaClient";
 import { BOT_START_TIME } from "../global/botState";
 import { checkRateLimit } from "./core/rateLimiter";
 import { isClientBotDisabledByChatId } from "../services/clients/clientService";
+import { getBotState } from "../services/botState/botStateService";
 import {
   getConversation,
   updateConversation,
@@ -55,6 +56,17 @@ export async function processWebhook(body: any) {
       from,
       session || "default"
     );
+
+    // Check global bot pause
+    try {
+      const botState = await getBotState();
+      if (botState.paused) {
+        console.log("⏸️ Bot is globally paused. Ignoring message from", from);
+        return;
+      }
+    } catch (err) {
+      console.error("Erro ao checar BotState:", err);
+    }
 
     if (isBlockedByPanel) {
       console.log("⛔ Bot desativado para este numero (painel):", from);

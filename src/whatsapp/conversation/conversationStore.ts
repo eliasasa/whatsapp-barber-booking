@@ -90,3 +90,11 @@ export function resumeConversation(from: string) {
   const { paused, ...rest } = conversation;
   setConversation(from, rest);
 }
+
+export function clearAllConversations() {
+  const keys = Array.from(conversations.keys());
+  keys.forEach((k) => {
+    conversations.set(k, createInitialConversation());
+  });
+  return keys.length;
+}

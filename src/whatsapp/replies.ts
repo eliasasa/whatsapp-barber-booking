@@ -1,7 +1,11 @@
-import { BOT_NAME } from "../global/botConfig";
-
 export function getDefaultGreetingMessage() {
-    return `Oi! 👋 Sou o assistente do ${BOT_NAME}.\n\nVocê pode:\n - Agendar um horário\n - Ver horários disponíveis\n\nÉ só me dizer o que você quer 😊`;
+    return `Oi! 👋 Sou o assistente.
+
+Você pode:
+ - Agendar um horário
+ - Ver horários disponíveis
+
+É só me dizer o que você quer 😊`;
 }
 
 export const replies = {

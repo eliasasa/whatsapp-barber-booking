@@ -193,6 +193,67 @@ export async function getAllClients() {
   });
 }
 
+export async function createClientFromAdmin({
+  name,
+  phone,
+  notes,
+}: {
+  name: string;
+  phone?: string | null;
+  notes?: string | null;
+}) {
+  const normalizedPhone = phone ? normalizePhone(phone) : undefined;
+
+  const data: { name?: string | null; phone?: string | null; notes?: string | null } = {};
+  data.name = name ?? null;
+
+  if (normalizedPhone !== undefined && normalizedPhone !== "") {
+    data.phone = normalizedPhone;
+  }
+
+  if (notes !== undefined) {
+    data.notes = notes ?? null;
+  }
+
+  return prisma.client.create({
+    data,
+  });
+}
+
+export async function getBlockedClients() {
+  return prisma.client.findMany({
+    where: { botDisabled: true },
+    orderBy: { createdAt: "desc" },
+    include: {
+      appointments: {
+        orderBy: { startAt: "desc" },
+        include: { service: true },
+      },
+    },
+  });
+}
+
+export async function blockClientById(clientId: string) {
+  return prisma.client.update({
+    where: { id: clientId },
+    data: { botDisabled: true },
+  });
+}
+
+export async function unblockClientById(clientId: string) {
+  return prisma.client.update({
+    where: { id: clientId },
+    data: { botDisabled: false },
+  });
+}
+
+export async function deleteClientById(clientId: string) {
+  return prisma.$transaction(async (tx) => {
+    await tx.appointment.deleteMany({ where: { clientId } });
+    return tx.client.delete({ where: { id: clientId } });
+  });
+}
+
 export async function isClientBotDisabledByChatId(
   chatId: string,
   session = "default"

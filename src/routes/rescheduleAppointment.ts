@@ -1,7 +1,10 @@
 import { Router } from "express";
 import { RescheduleAppointmentService } from "../services/appointments/RescheduleAppointmentService";
+import { requireAdminAuth } from "../middleware/requireAdminAuth";
 
 const router = Router();
+
+router.use(requireAdminAuth);
 
 router.patch("/:id/reschedule", async (req, res) => {
   try {

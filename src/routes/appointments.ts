@@ -2,8 +2,11 @@ import { Router } from "express";
 import { CreateAppointmentService } from "../services/appointments/createAppointmentService";
 import { GetAppointmentByIdService } from "../services/appointments/GetAppointmentByIdService";
 import { ListAppointmentsService } from "../services/appointments/ListAppointmentsService";
+import { requireAdminAuth } from "../middleware/requireAdminAuth";
 
 const router = Router();
+
+router.use(requireAdminAuth);
 
 router.get("/", async (_req, res) => {
   try {

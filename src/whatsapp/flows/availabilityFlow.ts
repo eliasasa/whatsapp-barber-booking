@@ -75,17 +75,15 @@ export async function availabilityFlow(
           : "";
 
         const response =
-          `📅 Horários disponíveis para ${text}:\n\n` +
-          `${formatted}\n\n` +
-          reasonText +
+          `📅 Horários disponíveis para ${text}:\n\n${formatted}` +
+          (reasonText ? `\n\n${reasonText}` : "") +
           (availability.status === "partial"
             ? "\n\n⚠️ Esse dia tem bloqueios parciais, então nem todos os horários ficam disponíveis."
             : "") +
-          "\n\n" +
-          "👉 Para agendar, digite *Agendar*\n" +
+          "\n\n👉 Para agendar, digite *Agendar*\n" +
           "👉 Ou me diga outra data para consultar 😊";
 
-        // 🔥 FINALIZA O FLUXO
+        // FINALIZA O FLUXO
         resetConversation(from);
 
         // salva só pra fallback de UX
