@@ -209,11 +209,11 @@ export async function createClientFromAdmin({
 
   if (normalizedPhone !== undefined && normalizedPhone !== "") {
     data.phone = normalizedPhone;
-  } else {
-    data.phone = null;
   }
 
-  data.notes = notes ?? null;
+  if (notes !== undefined) {
+    data.notes = notes ?? null;
+  }
 
   return prisma.client.create({
     data,
