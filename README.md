@@ -310,6 +310,28 @@ Fluxo de catálogo:
 
 ---
 
+## Demonstração visual
+
+Coloque as mídias em `docs/assets/` com estes nomes para o README renderizar corretamente:
+
+* `horarios-disponiveis.png` — cliente consultando horários disponíveis
+* `cancelamento-agendamento.png` — fluxo de cancelamento de serviço
+* `fluxo-agendamento.gif` — fluxo completo de agendamento no WhatsApp
+
+### Consulta de horários
+
+![Cliente verificando horários disponíveis](docs/assets/horarios-disponiveis.png)
+
+### Cancelamento de agendamento
+
+![Cliente cancelando um serviço](docs/assets/cancelamento-agendamento.png)
+
+### Fluxo completo de agendamento
+
+![Fluxo completo de agendamento via bot](docs/assets/fluxo-agendamento.gif)
+
+---
+
 ## Comandos do bot
 
 ```
