@@ -1,4 +1,4 @@
-# 💈 WhatsApp Barber Booking
+# WhatsApp Barber Booking
 
 ![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
 ![NodeJS](https://img.shields.io/badge/node.js-6DA55F?style=for-the-badge&logo=node.js&logoColor=white)
@@ -11,9 +11,9 @@ Sistema de agendamento para barbearia via WhatsApp, com backend em Node.js, Type
 
 ---
 
-## ✨ Funcionalidades
+## Funcionalidades
 
-## 🔐 Painel Administrativo & Autenticação
+## Painel Administrativo & Autenticação
 
 O projeto inclui um painel administrativo protegido por autenticação JWT para gerenciar disponibilidade, bloqueios e outros recursos.
 
@@ -31,7 +31,7 @@ Fluxo recomendado para front-end:
 
 Obs.: Não há signup público — o admin inicial é criado via seed ou `POST /auth/setup`.
 
-## ⛑️ Rate limiting no login
+## Rate limiting no login
 
 Para mitigar ataques de força bruta, o endpoint de login possui rate limiting:
 
@@ -41,7 +41,7 @@ Para mitigar ataques de força bruta, o endpoint de login possui rate limiting:
 
 Essa proteção é implementada em `src/middleware/loginRateLimiter.ts` e aplicada em `POST /auth/login`.
 
-## ⚙️ Variáveis de ambiente (autenticação)
+## Variáveis de ambiente (autenticação)
 
 Adicione as seguintes variáveis no seu `.env` para habilitar e configurar o painel:
 
@@ -52,7 +52,7 @@ Adicione as seguintes variáveis no seu `.env` para habilitar e configurar o pai
 
 O seed (`npx prisma db seed`) usa `ADMIN_EMAIL` e `ADMIN_PASSWORD` para criar/atualizar o admin inicial de forma idempotente.
 
-## 🧾 Instruções rápidas de administração
+## Instruções rápidas de administração
 
 1. Aplicar migrations:
 
@@ -89,7 +89,7 @@ Use o token retornado nas próximas chamadas protegidas:
 Authorization: Bearer <jwt-token>
 ```
 
-## 🔧 Rotas administrativas protegidas (exemplos)
+## Rotas administrativas protegidas (exemplos)
 
 - `GET /availability` — lista horários de expediente (requer JWT)
 - `POST /availability` — cria horário de expediente
@@ -125,9 +125,9 @@ WHATSAPP_HOOK_EVENTS=session.status,message
 
 ---
 
-## 🚀 Como rodar o projeto
+## Como rodar o projeto
 
-### 🔥 Opção recomendada: WAHA + PostgreSQL no Docker, backend local
+### Opção recomendada: WAHA + PostgreSQL no Docker, backend local
 
 Suba os serviços de infraestrutura:
 
@@ -169,7 +169,7 @@ Conecte o WhatsApp via QR Code no dashboard.
 
 ---
 
-### ⚙️ Rodar sem Docker
+### Rodar sem Docker
 
 Você precisará de:
 
@@ -188,7 +188,7 @@ npm run dev
 
 ---
 
-## 🌱 Seed inicial
+## Seed inicial
 
 O seed cria:
 
@@ -211,9 +211,9 @@ npx prisma db seed
 
 ---
 
-## 📡 Endpoints principais
+## Endpoints principais
 
-### 🩺 Saúde
+### Saúde
 
 ```
 GET /health
@@ -221,7 +221,7 @@ GET /health
 
 ---
 
-### 📲 Webhook do WAHA
+### Webhook do WAHA
 
 ```
 POST /webhook/waha
@@ -229,7 +229,7 @@ POST /webhook/waha
 
 ---
 
-### 📅 Agendamentos
+### Agendamentos
 
 ```
 POST   /appointments
@@ -239,7 +239,7 @@ PATCH  /appointments/:id/reschedule
 
 ---
 
-### 📋 Agenda do barbeiro
+### Agenda do barbeiro
 
 ```
 GET /agenda?date=YYYY-MM-DD
@@ -247,7 +247,7 @@ GET /agenda?date=YYYY-MM-DD
 
 ---
 
-### ⏰ Disponibilidade
+### Disponibilidade
 
 ```
 POST /availability
@@ -256,7 +256,7 @@ GET  /availability-slots?date=DD/MM&serviceId=...
 
 ---
 
-## 🤖 Fluxo do bot WhatsApp
+## Fluxo do bot WhatsApp
 
 ### 1. Saudação
 
@@ -310,7 +310,7 @@ Fluxo de catálogo:
 
 ---
 
-## ⌨️ Comandos do bot
+## Comandos do bot
 
 ```
 #pause     → pausa o atendimento automático
@@ -321,7 +321,7 @@ Fluxo de catálogo:
 
 ---
 
-## 🧠 Detalhes de arquitetura
+## Detalhes de arquitetura
 
 * Estado da conversa mantido em memória
 * Controle via `flow` e `step`
@@ -333,12 +333,12 @@ Fluxo de catálogo:
   * availability
   * services
 
-📌 Regras de negócio ficam em `services`
-📌 Prisma apenas na persistência
+Regras de negócio ficam em `services`
+Prisma apenas na persistência
 
 ---
 
-## 🌐 Acesso remoto
+## Acesso remoto
 
 A exposição externa via Cloudflare Tunnel será implementada futuramente.
 
@@ -347,6 +347,16 @@ A exposição externa via Cloudflare Tunnel será implementada futuramente.
 ```
 docs/adr-001-cloudflare-tunnel.md
 ```
+
+## Frontend (Web UI)
+
+O frontend do painel está em: https://github.com/eliasasa/whatsapp-barber-booking-web
+
+Clone e execute o frontend separadamente. Integração básica:
+
+1. Login via `POST /auth/login` para obter JWT.
+2. Enviar `Authorization: Bearer <token>` nas requisições para rotas protegidas.
+
 
 ---
 
