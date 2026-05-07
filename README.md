@@ -13,91 +13,91 @@ Sistema de agendamento para barbearia via WhatsApp, com backend em Node.js, Type
 
 ## ✨ Funcionalidades
 
-* Agendamento de horários via WhatsApp
-* Cadastro automático de clientes por telefone
-* Captura de nome apenas na primeira conversa
-* Catálogo dinâmico de serviços com nome, duração e preço
-* Consulta de horários disponíveis por data
-* Cancelamento de agendamentos futuros
-* Agenda diária para o barbeiro
-* Comandos administrativos via WhatsApp
-* Validação de conflitos de horário e horário de funcionamento
+## 🔐 Painel Administrativo & Autenticação
 
----
+O projeto inclui um painel administrativo protegido por autenticação JWT para gerenciar disponibilidade, bloqueios e outros recursos.
 
-## 🧱 Stack
+- Modelo `AdminUser` (Prisma) foi adicionado para armazenar admins.
+- Endpoints principais:
+  - `POST /auth/login` — autentica admin e retorna um JWT (Bearer token).
+  - `POST /auth/setup` — cria o primeiro admin (pode exigir `AUTH_SETUP_KEY`).
+  - `GET /auth/me` — valida o token e retorna dados do admin (protegido).
 
-* Node.js
-* TypeScript
-* Express
-* Prisma
-* PostgreSQL
-* WAHA (WhatsApp HTTP API)
-* Docker Compose
-* Axios
+Fluxo recomendado para front-end:
 
----
+1. Fazer `POST /auth/login` com `{ email, password }`.
+2. Armazenar o token retornado (e.g. `localStorage`) e enviar `Authorization: Bearer <token>` nas requisições protegidas.
+3. Verificar sessão chamando `GET /auth/me` ao iniciar a aplicação.
 
-## 🧠 Como o sistema funciona
+Obs.: Não há signup público — o admin inicial é criado via seed ou `POST /auth/setup`.
 
-1. O cliente envia uma mensagem no WhatsApp.
-2. O WAHA recebe essa mensagem e envia um webhook para o backend.
-3. O backend processa o webhook, aplica rate limit e regras de validação.
-4. O handler identifica o fluxo correto por intenção e estado da conversa.
-5. Os fluxos (`booking`, `availability`, `cancel`, `services`) chamam services de negócio.
-6. Os services usam Prisma para persistir ou consultar dados.
-7. O backend responde ao cliente pelo WAHA.
+## ⛑️ Rate limiting no login
 
-```mermaid
-sequenceDiagram
-    participant U as Usuário (WhatsApp)
-    participant W as WAHA (Docker)
-    participant B as Backend (Express)
-    participant DB as Postgres (Prisma)
-    
-    U->>W: Envia mensagem
-    W->>B: Webhook (POST /webhook/waha)
-    B->>B: Identifica Intent & Step atual
-    B->>DB: Consulta/Atualiza Dados
-    DB-->>B: Retorna Dados (Ex: Horários)
-    B->>W: Dispara Resposta (Axios)
-    W-->>U: Recebe mensagem
-```
+Para mitigar ataques de força bruta, o endpoint de login possui rate limiting:
 
-📌 A conversa é mantida em memória enquanto o processo está ativo.
+- Limite padrão: **5 tentativas** a cada **15 minutos** por IP.
+- Ao exceder, o IP é bloqueado por **15 minutos**.
+- Resposta HTTP: `429 Too Many Requests` com header `Retry-After` indicando segundos até poder tentar novamente.
 
----
+Essa proteção é implementada em `src/middleware/loginRateLimiter.ts` e aplicada em `POST /auth/login`.
 
-## 📁 Estrutura principal
+## ⚙️ Variáveis de ambiente (autenticação)
+
+Adicione as seguintes variáveis no seu `.env` para habilitar e configurar o painel:
+
+- `AUTH_JWT_SECRET` — segredo usado para assinar JWTs (obrigatório em produção).
+- `AUTH_JWT_EXPIRES_IN` — tempo de expiração do token (ex: `12h`).
+- `AUTH_SETUP_KEY` — chave opcional para proteger o endpoint de setup inicial.
+- `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME` — opcionalmente usados pelo seed para criar o admin inicial.
+
+O seed (`npx prisma db seed`) usa `ADMIN_EMAIL` e `ADMIN_PASSWORD` para criar/atualizar o admin inicial de forma idempotente.
+
+## 🧾 Instruções rápidas de administração
+
+1. Aplicar migrations:
 
 ```bash
-src/whatsapp/core — handler, intents, comandos, tipos de fluxo
-src/whatsapp/conversation — estado da conversa
-src/whatsapp/flows — fluxos de booking, cancelamento, disponibilidade e serviços
-src/services — regras de negócio
-src/routes — rotas HTTP da API
-prisma/ — schema, migrations e seed
-docs/ — decisões e anotações do projeto
+npx prisma migrate deploy
 ```
 
----
-
-## 🛠 Pré-requisitos
-
-* Node.js 18+
-* Docker e Docker Compose
-* PostgreSQL
-* Conta WhatsApp para conectar ao WAHA
-
----
-
-## 🔐 Configuração do ambiente
-
-Copie o arquivo de exemplo:
+2. Executar seed (cria admin inicial e dados padrão):
 
 ```bash
-cp .env.example .env
+npx prisma db seed
 ```
+
+3. Testar login (exemplo `curl`):
+
+```bash
+curl -X POST http://localhost:3000/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"admin@painel.local","password":"sua_senha"}'
+```
+
+Resposta esperada:
+
+```json
+{
+  "token": "<jwt-token>",
+  "admin": { "id": "...", "email": "admin@painel.local", "name": "Admin" }
+}
+```
+
+Use o token retornado nas próximas chamadas protegidas:
+
+```
+Authorization: Bearer <jwt-token>
+```
+
+## 🔧 Rotas administrativas protegidas (exemplos)
+
+- `GET /availability` — lista horários de expediente (requer JWT)
+- `POST /availability` — cria horário de expediente
+- `GET /availability-blocks` — lista bloqueios por data
+- `POST /availability-blocks` — cria bloqueio de data/período
+- `POST /appointments` / `PATCH /appointments/:id/reschedule` / `PATCH /appointments/:id/cancel` — operações protegidas
+
+As rotas administrativas estão protegidas pelo middleware `requireAdminAuth` (ver `src/middleware/requireAdminAuth.ts`).
 
 Ajuste as variáveis conforme seu ambiente.
 
