@@ -10,6 +10,7 @@ import dailyAgendaRoutes from "./routes/dailyAgenda";
 import webhookRoutes from "./routes/webhook";
 import clientsRoutes from "./routes/clients";
 import botMessagesRoutes from "./routes/botMessages";
+import wahaRoutes from "./routes/waha";
 import servicesRoutes from "./routes/services";
 import botStateRoutes from "./routes/botState";
 import cors from "cors";
@@ -48,5 +49,7 @@ app.use("/bot-messages", botMessagesRoutes);
 app.use("/services", servicesRoutes);
 
 app.use("/bot", botStateRoutes);
+
+app.use("/waha", wahaRoutes);
 
 app.use("/webhook", webhookRoutes);

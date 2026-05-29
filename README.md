@@ -99,6 +99,37 @@ Authorization: Bearer <jwt-token>
 
 As rotas administrativas estão protegidas pelo middleware `requireAdminAuth` (ver `src/middleware/requireAdminAuth.ts`).
 
+## Painel WAHA
+
+O backend expõe uma camada administrativa para consultar e controlar a sessão do WAHA sem expor credenciais do WAHA no front-end. Todas as rotas abaixo exigem JWT de admin.
+
+Base da API:
+
+```bash
+http://localhost:3000
+```
+
+Endpoints disponíveis:
+
+- `GET /waha/server/status` — retorna o status e uptime do servidor WAHA.
+- `GET /waha/sessions` — lista todas as sessões do WAHA.
+- `GET /waha/sessions/:session` — retorna os dados de uma sessão específica, como `default`.
+- `GET /waha/sessions/:session/me` — mostra qual conta WhatsApp está conectada na sessão.
+- `GET /waha/sessions/:session/qr` — retorna o QR raw da sessão para pareamento ou reautenticação.
+- `POST /waha/sessions/:session/start` — inicia uma sessão parada.
+- `POST /waha/sessions/:session/stop` — para a sessão sem apagar seus dados.
+- `POST /waha/sessions/:session/restart` — reinicia a sessão e tenta reconectar sem recriar tudo do zero.
+- `POST /waha/sessions/:session/logout` — faz logout da sessão e remove a autenticação, útil quando a sessão travar.
+- `DELETE /waha/sessions/:session` — apaga a sessão completamente, incluindo configuração e dados.
+
+Função prática no painel:
+
+- usar `server/status` e `sessions` para mostrar o estado geral;
+- usar `session/me` para verificar se o WhatsApp está autenticado;
+- usar `session/qr` quando a sessão cair em `SCAN_QR_CODE`;
+- usar `start`, `stop` e `restart` para controle operacional;
+- usar `logout` e `delete` como fallback quando a sessão ficar corrompida.
+
 Ajuste as variáveis conforme seu ambiente.
 
 ### Exemplo de `.env`
@@ -384,8 +415,6 @@ Clone e execute o frontend separadamente. Integração básica:
 
 ## 🗺 Próximos passos
 
-* Painel web para o barbeiro
-* Autenticação
 * Acesso remoto via celular
 * Melhorias no fluxo de disponibilidade
 * Testes automatizados
