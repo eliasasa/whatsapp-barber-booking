@@ -94,6 +94,11 @@ O projeto inclui um painel administrativo protegido por autenticação JWT para 
     -d '{"email":"novo@email.com","password":"NovaSenha123","currentPassword":"senhaAtual"}'
   ```
 
+  Nota importante:
+
+  - Não existe um endpoint público de "esqueci minha senha" neste backend. A alteração de senha só pode ser feita por um admin autenticado através de `PATCH /auth/credentials` (que exige `currentPassword`) ou manualmente via seed/DB.
+
+
 Fluxo recomendado para front-end:
 
 1. Fazer `POST /auth/login` com `{ email, password }`.
