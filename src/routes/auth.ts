@@ -83,7 +83,7 @@ router.get("/me", requireAdminAuth, async (req, res) => {
   return res.json({ admin: req.adminUser });
 });
 
-router.patch("/email", requireAdminAuth, async (req, res) => {
+router.patch("/email", loginRateLimiter, requireAdminAuth, async (req, res) => {
   try {
     const { email, currentPassword, ...rest } = req.body ?? {};
 
@@ -111,6 +111,12 @@ router.patch("/email", requireAdminAuth, async (req, res) => {
       currentPassword,
     });
 
+    console.info("[AUTH] admin email updated", {
+      adminId: req.adminUser.id,
+      email,
+      ip: req.ip,
+    });
+
     return res.json(result);
   } catch (err: any) {
     if (
@@ -134,7 +140,7 @@ router.patch("/email", requireAdminAuth, async (req, res) => {
 
 // (insecure reset route removed)
 
-router.patch("/credentials", requireAdminAuth, async (req, res) => {
+router.patch("/credentials", loginRateLimiter, requireAdminAuth, async (req, res) => {
   try {
     const { email, password, currentPassword, ...rest } = req.body ?? {};
 
@@ -165,6 +171,12 @@ router.patch("/credentials", requireAdminAuth, async (req, res) => {
       email,
       password,
       currentPassword,
+    });
+
+    console.info("[AUTH] admin credentials updated", {
+      adminId: req.adminUser.id,
+      email,
+      ip: req.ip,
     });
 
     return res.json(result);

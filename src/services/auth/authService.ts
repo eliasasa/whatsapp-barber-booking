@@ -33,6 +33,7 @@ export type AdminUserDTO = {
   name: string | null;
   email: string;
   active: boolean;
+  tokenVersion: number;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -47,6 +48,7 @@ function toAdminDTO(admin: {
   name: string | null;
   email: string;
   active: boolean;
+  tokenVersion: number;
   createdAt: Date;
   updatedAt: Date;
 }): AdminUserDTO {
@@ -55,18 +57,19 @@ function toAdminDTO(admin: {
     name: admin.name,
     email: admin.email,
     active: admin.active,
+    tokenVersion: admin.tokenVersion,
     createdAt: admin.createdAt,
     updatedAt: admin.updatedAt,
   };
 }
 
-function signToken(admin: { id: string; email: string }): string {
+function signToken(admin: { id: string; email: string; tokenVersion: number }): string {
   const signOptions = {
     expiresIn: JWT_EXPIRES_IN as jwt.SignOptions["expiresIn"],
   } as jwt.SignOptions;
 
   return jwt.sign(
-    { sub: admin.id, email: admin.email, role: "ADMIN" },
+    { sub: admin.id, email: admin.email, role: "ADMIN", tokenVersion: admin.tokenVersion },
     getJwtSecret(),
     signOptions
   );
@@ -192,6 +195,7 @@ export async function updateAdminLoginCredentials(input: {
     data: {
       email,
       passwordHash,
+      tokenVersion: { increment: 1 },
     },
   });
 
@@ -241,6 +245,7 @@ export async function updateAdminEmail(input: {
     where: { id: admin.id },
     data: {
       email,
+      tokenVersion: { increment: 1 },
     },
   });
 
@@ -267,5 +272,7 @@ export function verifyAdminToken(token: string) {
     sub?: string;
     email?: string;
     role?: string;
+    tokenVersion?: number;
+    iat?: number;
   };
 }

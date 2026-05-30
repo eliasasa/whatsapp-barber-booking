@@ -31,6 +31,10 @@ export async function requireAdminAuth(
       return res.status(401).json({ error: "Nao autenticado" });
     }
 
+    if ((payload.tokenVersion ?? 0) !== adminUser.tokenVersion) {
+      return res.status(401).json({ error: "Token invalido" });
+    }
+
     req.adminUser = adminUser;
     return next();
   } catch {
