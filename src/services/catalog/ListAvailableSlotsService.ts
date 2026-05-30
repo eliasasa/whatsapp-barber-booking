@@ -1,5 +1,28 @@
 import { prisma } from "../../lib/prisma";
 
+function parseIsoDate(date: string): Date | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return null;
+  }
+
+  const [yearStr, monthStr, dayStr] = date.split("-");
+  const year = Number(yearStr);
+  const month = Number(monthStr);
+  const day = Number(dayStr);
+
+  const parsed = new Date(year, month - 1, day);
+
+  if (
+    parsed.getFullYear() !== year ||
+    parsed.getMonth() !== month - 1 ||
+    parsed.getDate() !== day
+  ) {
+    return null;
+  }
+
+  return parsed;
+}
+
 interface Request {
   date: string; // YYYY-MM-DD
   serviceId: string;
@@ -11,7 +34,12 @@ class ListAvailableSlotsService {
       throw new Error("Parâmetros inválidos");
     }
 
-    const day = new Date(date + "T00:00:00");
+    const day = parseIsoDate(date);
+
+    if (!day) {
+      throw new Error("Data inválida");
+    }
+
     const weekday = day.getDay();
 
     const availability = await prisma.availability.findFirst({

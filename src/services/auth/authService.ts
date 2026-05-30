@@ -143,6 +143,113 @@ export async function loginAdminUser(input: {
   };
 }
 
+export async function updateAdminLoginCredentials(input: {
+  adminUserId: string;
+  currentPassword: string;
+  email: string;
+  password: string;
+}): Promise<AuthResult> {
+  const admin = await prisma.adminUser.findUnique({
+    where: { id: input.adminUserId },
+  });
+
+  if (!admin || !admin.active) {
+    throw new Error("Nao autenticado");
+  }
+
+  const currentPasswordMatches = await bcrypt.compare(
+    input.currentPassword,
+    admin.passwordHash
+  );
+
+  if (!currentPasswordMatches) {
+    throw new Error("Senha atual invalida");
+  }
+
+  const email = normalizeEmail(input.email);
+  const password = input.password.trim();
+
+  if (!email || !password) {
+    throw new Error("Email e senha sao obrigatorios");
+  }
+
+  if (password.length < 8) {
+    throw new Error("Senha deve ter pelo menos 8 caracteres");
+  }
+
+  const existingWithEmail = await prisma.adminUser.findUnique({
+    where: { email },
+  });
+
+  if (existingWithEmail && existingWithEmail.id !== admin.id) {
+    throw new Error("Email ja em uso");
+  }
+
+  const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+
+  const updated = await prisma.adminUser.update({
+    where: { id: admin.id },
+    data: {
+      email,
+      passwordHash,
+    },
+  });
+
+  return {
+    token: signToken(updated),
+    admin: toAdminDTO(updated),
+  };
+}
+
+export async function updateAdminEmail(input: {
+  adminUserId: string;
+  currentPassword: string;
+  email: string;
+}): Promise<AuthResult> {
+  const admin = await prisma.adminUser.findUnique({
+    where: { id: input.adminUserId },
+  });
+
+  if (!admin || !admin.active) {
+    throw new Error("Nao autenticado");
+  }
+
+  const currentPasswordMatches = await bcrypt.compare(
+    input.currentPassword,
+    admin.passwordHash
+  );
+
+  if (!currentPasswordMatches) {
+    throw new Error("Senha atual invalida");
+  }
+
+  const email = normalizeEmail(input.email);
+
+  if (!email) {
+    throw new Error("Email invalido");
+  }
+
+  const existingWithEmail = await prisma.adminUser.findUnique({
+    where: { email },
+  });
+
+  if (existingWithEmail && existingWithEmail.id !== admin.id) {
+    throw new Error("Email ja em uso");
+  }
+
+  const updated = await prisma.adminUser.update({
+    where: { id: admin.id },
+    data: {
+      email,
+    },
+  });
+
+  return {
+    token: signToken(updated),
+    admin: toAdminDTO(updated),
+  };
+}
+
 export async function getAdminUserById(id: string) {
   return prisma.adminUser.findUnique({
     where: { id },

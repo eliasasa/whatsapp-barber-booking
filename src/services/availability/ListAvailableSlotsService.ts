@@ -1,13 +1,34 @@
 import { prisma } from "../../lib/prisma";
 
-export async function listAvailableSlots(dateStr: string): Promise<string[]> {
+function parseDayMonth(dateStr: string): Date | null {
+  if (!/^\d{2}\/\d{2}$/.test(dateStr)) {
+    return null;
+  }
 
-  const [day, month] = dateStr.split("/").map(Number);
+  const [dayStr, monthStr] = dateStr.split("/");
+  const day = Number(dayStr);
+  const month = Number(monthStr);
   const year = new Date().getFullYear();
 
-  const date = new Date(year, month! - 1, day);
+  const date = new Date(year, month - 1, day);
 
-  if (isNaN(date.getTime())) return [];
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+
+  return date;
+}
+
+export async function listAvailableSlots(dateStr: string): Promise<string[]> {
+  const date = parseDayMonth(dateStr);
+
+  if (!date) {
+    return [];
+  }
 
   const weekday = date.getDay();
 
@@ -72,12 +93,9 @@ export interface DayAvailabilityResult {
 }
 
 export async function getDayAvailability(dateStr: string): Promise<DayAvailabilityResult> {
-  const [day, month] = dateStr.split("/").map(Number);
-  const year = new Date().getFullYear();
+  const date = parseDayMonth(dateStr);
 
-  const date = new Date(year, month! - 1, day);
-
-  if (isNaN(date.getTime())) {
+  if (!date) {
     return {
       status: "invalid",
       dateLabel: dateStr,
