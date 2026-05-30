@@ -23,6 +23,77 @@ O projeto inclui um painel administrativo protegido por autenticação JWT para 
   - `POST /auth/setup` — cria o primeiro admin (pode exigir `AUTH_SETUP_KEY`).
   - `GET /auth/me` — valida o token e retorna dados do admin (protegido).
 
+  ### Alterar e-mail e credenciais (novo)
+
+  O backend fornece dois endpoints para atualizar e-mail e credenciais do admin. Ambos exigem um `Authorization: Bearer <token>` válido.
+
+  - `PATCH /auth/email` — altera apenas o e-mail do admin.
+
+    Headers:
+
+    - `Authorization: Bearer <token>`
+    - `Content-Type: application/json`
+
+    Body:
+
+    ```json
+    {
+      "email": "novo@email.com",
+      "currentPassword": "senhaAtual"
+    }
+    ```
+
+    Resposta de sucesso: retorna um novo token e o objeto `admin` atualizado.
+
+    Erros comuns:
+    - `400` — `Email invalido`
+    - `401` — `Senha atual invalida` ou `Nao autenticado`
+    - `409` — `Email ja em uso`
+
+  - `PATCH /auth/credentials` — altera e-mail e senha ao mesmo tempo.
+
+    Headers:
+
+    - `Authorization: Bearer <token>`
+    - `Content-Type: application/json`
+
+    Body:
+
+    ```json
+    {
+      "email": "novo@email.com",
+      "password": "NovaSenha123",
+      "currentPassword": "senhaAtual"
+    }
+    ```
+
+    Resposta de sucesso: retorna um novo token e o objeto `admin` atualizado.
+
+    Erros comuns:
+    - `400` — `Email invalido`, `Senha invalida` (senha nova vazia) ou `Senha deve ter pelo menos 8 caracteres`
+    - `401` — `Senha atual invalida` ou `Nao autenticado`
+    - `409` — `Email ja em uso`
+
+  Exemplos cURL rápidos:
+
+  Trocar só o e-mail:
+
+  ```bash
+  curl -X PATCH http://localhost:3000/auth/email \
+    -H "Authorization: Bearer SEU_JWT" \
+    -H "Content-Type: application/json" \
+    -d '{"email":"novo@email.com","currentPassword":"senhaAtual"}'
+  ```
+
+  Trocar e-mail e senha:
+
+  ```bash
+  curl -X PATCH http://localhost:3000/auth/credentials \
+    -H "Authorization: Bearer SEU_JWT" \
+    -H "Content-Type: application/json" \
+    -d '{"email":"novo@email.com","password":"NovaSenha123","currentPassword":"senhaAtual"}'
+  ```
+
 Fluxo recomendado para front-end:
 
 1. Fazer `POST /auth/login` com `{ email, password }`.
@@ -317,6 +388,11 @@ Fluxo informativo:
 * O bot pede a data
 * O sistema retorna os horários livres
 * O fluxo encerra
+
+Observação sobre validação de data:
+
+- O sistema agora valida estritamente o formato e a existência da data (DD/MM). Datas inválidas como `22/14` ou `30/30` são rejeitadas e o bot responde `📅 Data inválida. Use o formato DD/MM (ex: 25/02).`.
+
 
 ---
 
