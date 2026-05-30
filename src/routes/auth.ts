@@ -4,6 +4,7 @@ import {
   setupFirstAdminUser,
   updateAdminEmail,
   updateAdminLoginCredentials,
+  resetAdminPasswordByEmail,
 } from "../services/auth/authService";
 import { requireAdminAuth } from "../middleware/requireAdminAuth";
 import { loginRateLimiter } from "../middleware/loginRateLimiter";
@@ -122,6 +123,39 @@ router.patch("/email", requireAdminAuth, async (req, res) => {
 
     if (err.message === "Email ja em uso") {
       return res.status(409).json({ error: err.message });
+    }
+
+    if (err.message) {
+      return res.status(400).json({ error: err.message });
+    }
+
+    return res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+// Dev-only insecure reset: updates password by email without token
+router.post("/reset-password", async (req, res) => {
+  try {
+    if (process.env.ALLOW_INSECURE_RESET !== "true") {
+      return res.status(403).json({ error: "Insecure reset disabled" });
+    }
+
+    const { email, password } = req.body ?? {};
+
+    if (typeof email !== "string" || !email.trim()) {
+      return res.status(400).json({ error: "Email invalido" });
+    }
+
+    if (typeof password !== "string" || !password.trim()) {
+      return res.status(400).json({ error: "Senha invalida" });
+    }
+
+    const result = await resetAdminPasswordByEmail({ email, password });
+
+    return res.json(result);
+  } catch (err: any) {
+    if (err.message === "Admin nao encontrado") {
+      return res.status(404).json({ error: err.message });
     }
 
     if (err.message) {

@@ -262,6 +262,37 @@ export async function getAdminUserByEmail(email: string) {
   });
 }
 
+export async function resetAdminPasswordByEmail(input: {
+  email: string;
+  password: string;
+}): Promise<AuthResult> {
+  const email = normalizeEmail(input.email);
+
+  const admin = await prisma.adminUser.findUnique({ where: { email } });
+
+  if (!admin) {
+    throw new Error("Admin nao encontrado");
+  }
+
+  const password = input.password.trim();
+
+  if (!password || password.length < 8) {
+    throw new Error("Senha deve ter pelo menos 8 caracteres");
+  }
+
+  const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+
+  const updated = await prisma.adminUser.update({
+    where: { id: admin.id },
+    data: { passwordHash },
+  });
+
+  return {
+    token: signToken(updated),
+    admin: toAdminDTO(updated),
+  };
+}
+
 export function verifyAdminToken(token: string) {
   return jwt.verify(token, getJwtSecret()) as {
     sub?: string;
