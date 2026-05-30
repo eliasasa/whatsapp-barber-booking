@@ -111,6 +111,16 @@ export async function setupFirstAdminUser(input: {
       name,
       passwordHash,
     },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      passwordHash: true,
+      active: true,
+      tokenVersion: true,
+      createdAt: true,
+      updatedAt: true,
+    },
   });
 
   return {
@@ -128,6 +138,16 @@ export async function loginAdminUser(input: {
 
   const admin = await prisma.adminUser.findUnique({
     where: { email },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      passwordHash: true,
+      active: true,
+      tokenVersion: true,
+      createdAt: true,
+      updatedAt: true,
+    },
   });
 
   if (!admin || !admin.active) {
@@ -154,6 +174,16 @@ export async function updateAdminLoginCredentials(input: {
 }): Promise<AuthResult> {
   const admin = await prisma.adminUser.findUnique({
     where: { id: input.adminUserId },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      passwordHash: true,
+      active: true,
+      tokenVersion: true,
+      createdAt: true,
+      updatedAt: true,
+    },
   });
 
   if (!admin || !admin.active) {
@@ -182,6 +212,7 @@ export async function updateAdminLoginCredentials(input: {
 
   const existingWithEmail = await prisma.adminUser.findUnique({
     where: { email },
+    select: { id: true },
   });
 
   if (existingWithEmail && existingWithEmail.id !== admin.id) {
@@ -196,6 +227,16 @@ export async function updateAdminLoginCredentials(input: {
       email,
       passwordHash,
       tokenVersion: { increment: 1 },
+    },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      passwordHash: true,
+      active: true,
+      tokenVersion: true,
+      createdAt: true,
+      updatedAt: true,
     },
   });
 
@@ -212,6 +253,16 @@ export async function updateAdminEmail(input: {
 }): Promise<AuthResult> {
   const admin = await prisma.adminUser.findUnique({
     where: { id: input.adminUserId },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      passwordHash: true,
+      active: true,
+      tokenVersion: true,
+      createdAt: true,
+      updatedAt: true,
+    },
   });
 
   if (!admin || !admin.active) {
@@ -235,6 +286,7 @@ export async function updateAdminEmail(input: {
 
   const existingWithEmail = await prisma.adminUser.findUnique({
     where: { email },
+    select: { id: true },
   });
 
   if (existingWithEmail && existingWithEmail.id !== admin.id) {
@@ -247,6 +299,16 @@ export async function updateAdminEmail(input: {
       email,
       tokenVersion: { increment: 1 },
     },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      passwordHash: true,
+      active: true,
+      tokenVersion: true,
+      createdAt: true,
+      updatedAt: true,
+    },
   });
 
   return {
@@ -258,12 +320,32 @@ export async function updateAdminEmail(input: {
 export async function getAdminUserById(id: string) {
   return prisma.adminUser.findUnique({
     where: { id },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      passwordHash: true,
+      active: true,
+      tokenVersion: true,
+      createdAt: true,
+      updatedAt: true,
+    },
   });
 }
 
 export async function getAdminUserByEmail(email: string) {
   return prisma.adminUser.findUnique({
     where: { email: normalizeEmail(email) },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      passwordHash: true,
+      active: true,
+      tokenVersion: true,
+      createdAt: true,
+      updatedAt: true,
+    },
   });
 }
 
