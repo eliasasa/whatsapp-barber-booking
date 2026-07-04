@@ -16,6 +16,7 @@ import {
   getDayAvailability,
 } from "../../../services/availability/ListAvailableSlotsService";
 import { prisma } from "../../../lib/prisma";
+import { getServiceType } from "../../../global/botConfig";
 
 /* ======================================================
    HELPER: BUILD SERVICE MENU
@@ -37,7 +38,7 @@ async function buildServiceMenu(clientName: string) {
   const serviceMap: Record<string, { id: string; name: string }> = {};
   let message = `Olá, ${clientName}! 👋\nQual serviço você deseja?\n\n`;
 
-  // Mostra apenas os primeiros 5
+  // Mostra apenas os primeiros MAX_VISIBLE_SERVICES serviços
   const visibleServices = services.slice(0, MAX_VISIBLE_SERVICES);
 
   visibleServices.forEach((service, index) => {
@@ -47,7 +48,8 @@ async function buildServiceMenu(clientName: string) {
       name: service.name,
     };
 
-    message += `*${option}.* ${service.name}\n`;
+    const priceText = service.price != null ? ` - R$ ${Number(service.price).toFixed(2)}` : "";
+    message += `*${option}.* ${service.name}${priceText}\n`;
   });
 
   // Guarda TODOS os serviços com chave especial
@@ -58,8 +60,11 @@ async function buildServiceMenu(clientName: string) {
     };
   });
 
-  message +=
-    '\nSe preferir, você também pode digitar o nome do serviço.\n\nDigite "Serviços" para ver todos os serviços disponíveis.';
+ if (services.length > MAX_VISIBLE_SERVICES) {
+    message += `\n_(mostrando ${MAX_VISIBLE_SERVICES} de ${services.length} serviços)_\n`;
+  }
+
+  message += '\nSe preferir, você também pode digitar o nome do serviço.\n\nDigite "Serviços" para ver todos os serviços disponíveis.';
 
   return { message, map: serviceMap };
 }
@@ -295,29 +300,38 @@ export async function handleTimeStep(
     return "Erro inesperado. Vamos começar novamente.";
   }
 
-  if (slotOptions[input]) {
-    updateConversation(from, {
-      step: ConversationStep.ASK_ADDRESS,
-      time: slotOptions[input],
-    });
+  const matchedSlot =
+    slotOptions[input] ??
+    Object.values(slotOptions).find((time) => time === input);
 
-    return "Perfeito ⏰\nAgora me diga o endereço:";
+  if (!matchedSlot) {
+    return "⚠️ Esse horário não está disponível.\nEscolha uma opção da lista.";
   }
 
-  const matchedSlot = Object.values(slotOptions).find(
-    (time) => time === input
-  );
+  const serviceType = await getServiceType();
 
-  if (matchedSlot) {
+  if (serviceType === "LOCAL") {
     updateConversation(from, {
-      step: ConversationStep.ASK_ADDRESS,
+      step: ConversationStep.CONFIRM,
       time: matchedSlot,
     });
 
-    return "Perfeito ⏰\nAgora me diga o endereço:";
+    const conversation = getConversation(from);
+    return (
+      "Quase pronto! Confirme seu agendamento:\n\n" +
+      `📌 Serviço: ${conversation.serviceName ?? "-"}\n` +
+      `📅 Data: ${conversation.date ?? "-"}\n` +
+      `⏰ Horário: ${matchedSlot}\n\n` +
+      "Digite 1️⃣ para confirmar ou 2️⃣ para cancelar"
+    );
   }
 
-  return "⚠️ Esse horário não está disponível.\nEscolha uma opção da lista.";
+  updateConversation(from, {
+    step: ConversationStep.ASK_ADDRESS,
+    time: matchedSlot,
+  });
+
+  return "Perfeito ⏰\nAgora me diga o endereço:";
 }
 
 /* ======================================================

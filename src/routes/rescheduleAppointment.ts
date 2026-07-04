@@ -9,13 +9,13 @@ router.use(requireAdminAuth);
 router.patch("/:id/reschedule", async (req, res) => {
   try {
     const { id } = req.params;
-    const { newStartAt } = req.body;
-
+    const { newStartAt, address } = req.body;
     const service = new RescheduleAppointmentService();
-
+    
     const updated = await service.execute({
       id,
       newStartAt,
+      address,
     });
 
     return res.json(updated);

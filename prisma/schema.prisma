@@ -42,7 +42,7 @@ model Service {
   id           String        @id @default(uuid())
   name         String
   duration     Int
-  price        Int?
+  price        Float?
   paused       Boolean       @default(false)
 
   appointments Appointment[]
@@ -77,9 +77,10 @@ model BotMessage {
 }
 
 model BotState {
-  id        String   @id @default(uuid())
-  paused    Boolean  @default(false)
-  lastPing  DateTime?
+  id          String      @id @default(uuid())
+  paused      Boolean     @default(false)
+  serviceType ServiceType @default(LOCAL)
+  lastPing    DateTime?
 
   updatedAt DateTime @updatedAt
 }
@@ -96,6 +97,11 @@ model AvailabilityBlock {
 enum AppointmentStatus {
   CONFIRMED
   CANCELED
+}
+
+enum ServiceType {
+  LOCAL
+  MOBILE
 }
 
 enum BotMessageKey {

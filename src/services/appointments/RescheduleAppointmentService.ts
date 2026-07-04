@@ -3,10 +3,11 @@ import { prisma } from "../../lib/prisma";
 interface Request {
   id: string;
   newStartAt: string;
+  address?: string;
 }
 
 class RescheduleAppointmentService {
-  async execute({ id, newStartAt }: Request) {
+  async execute({ id, newStartAt, address }: Request) {
     if (!newStartAt) {
       throw new Error("Nova data inválida");
     }
@@ -51,6 +52,7 @@ class RescheduleAppointmentService {
       data: {
         startAt: start,
         endAt: end,
+        ...(address !== undefined ? { address: address || null } : {}),
       },
     });
 

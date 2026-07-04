@@ -4,12 +4,12 @@ interface CreateAppointmentRequest {
   clientId: string;
   serviceId: string;
   startAt: string; // formato esperado: YYYY-MM-DDTHH:mm
-  address: string;
+  address?: string;
 }
 
 class CreateAppointmentService {
   async execute({ clientId, serviceId, startAt, address }: CreateAppointmentRequest) {
-    if (!clientId || !serviceId || !startAt || !address) {
+    if (!clientId || !serviceId || !startAt) {
       throw new Error("Campos obrigatórios ausentes");
     }
 
@@ -116,8 +116,8 @@ class CreateAppointmentService {
         serviceId,
         startAt: start,
         endAt: end,
-        address,
         status: "CONFIRMED",
+        ...(address ? { address } : {})
       },
     });
 

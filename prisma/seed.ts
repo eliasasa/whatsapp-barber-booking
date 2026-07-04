@@ -30,7 +30,7 @@ async function main() {
     data: [
       { name: "Corte", duration: 30, price: 30 },
       { name: "Barba", duration: 20, price: 20 },
-      { name: "Corte + Barba", duration: 50, price: 45 },
+      { name: "Corte + Barba", duration: 50, price: 44.9 },
     ],
     skipDuplicates: true,
   });
