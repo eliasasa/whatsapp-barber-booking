@@ -99,4 +99,24 @@ async function main() {
   });
 }
 
+await prisma.botState.upsert({
+  where: { id: "default" },
+  update: {},
+  create: {
+    id: "default",
+    paused: false,
+    serviceType: "LOCAL",
+  },
+});
+
+const existingBotState = await prisma.botState.findFirst();
+if (!existingBotState) {
+  await prisma.botState.create({
+    data: {
+      paused: false,
+      serviceType: "LOCAL",
+    },
+  });
+}
+
 main().finally(() => prisma.$disconnect());
