@@ -8,23 +8,24 @@ datasource db {
 }
 
 model Availability {
-  id        String   @id @default(uuid())
-  weekday   Int      @unique
-  startTime String   
-  endTime   String   
+  id        String @id @default(uuid())
+  weekday   Int    @unique
+  startTime String
+  endTime   String
 
   createdAt DateTime @default(now())
 }
 
 model Client {
-  id        String   @id @default(uuid())
-  name      String?
-  notes     String?
-  botDisabled Boolean @default(false)
-  phone     String?  @unique
-  createdAt DateTime @default(now())
+  id          String   @id @default(uuid())
+  name        String?
+  notes       String?
+  botDisabled Boolean  @default(false)
+  phone       String?  @unique
+  createdAt   DateTime @default(now())
 
-  appointments Appointment[]
+  appointments  Appointment[]
+  broadcastLogs BroadcastLog[]
 }
 
 model AdminUser {
@@ -39,29 +40,29 @@ model AdminUser {
 }
 
 model Service {
-  id           String        @id @default(uuid())
-  name         String
-  duration     Int
-  price        Float?
-  paused       Boolean       @default(false)
+  id       String  @id @default(uuid())
+  name     String
+  duration Int
+  price    Float?
+  paused   Boolean @default(false)
 
   appointments Appointment[]
 }
 
 model Appointment {
-  id        String   @id @default(uuid())
-  startAt   DateTime
-  endAt     DateTime
-  status    AppointmentStatus @default(CONFIRMED)
+  id      String            @id @default(uuid())
+  startAt DateTime
+  endAt   DateTime
+  status  AppointmentStatus @default(CONFIRMED)
 
-  address   String?
-  notes     String?
+  address String?
+  notes   String?
 
   clientId  String
   serviceId String
 
-  client    Client  @relation(fields: [clientId], references: [id])
-  service   Service @relation(fields: [serviceId], references: [id])
+  client  Client  @relation(fields: [clientId], references: [id])
+  service Service @relation(fields: [serviceId], references: [id])
 
   createdAt DateTime @default(now())
 
@@ -69,11 +70,11 @@ model Appointment {
 }
 
 model BotMessage {
-  id        String       @id @default(uuid())
+  id        String        @id @default(uuid())
   key       BotMessageKey @unique
   content   String
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
 }
 
 model BotState {
@@ -86,10 +87,10 @@ model BotState {
 }
 
 model AvailabilityBlock {
-  id        String   @id @default(uuid())
-  startAt   DateTime
-  endAt     DateTime
-  reason    String?
+  id      String   @id @default(uuid())
+  startAt DateTime
+  endAt   DateTime
+  reason  String?
 
   createdAt DateTime @default(now())
 }
@@ -108,3 +109,29 @@ enum BotMessageKey {
   GREETING
 }
 
+model Broadcast {
+  id         String          @id @default(uuid())
+  message    String
+  filter     String? // JSON com critérios do filtro
+  totalSent  Int             @default(0)
+  status     BroadcastStatus @default(PENDING)
+  createdAt  DateTime        @default(now())
+  finishedAt DateTime?
+  logs       BroadcastLog[]
+}
+
+model BroadcastLog {
+  id          String    @id @default(uuid())
+  broadcastId String
+  clientId    String
+  sentAt      DateTime  @default(now())
+  broadcast   Broadcast @relation(fields: [broadcastId], references: [id])
+  client      Client    @relation(fields: [clientId], references: [id])
+}
+
+enum BroadcastStatus {
+  PENDING
+  RUNNING
+  DONE
+  FAILED
+}

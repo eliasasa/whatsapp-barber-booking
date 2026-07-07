@@ -14,6 +14,7 @@ import wahaRoutes from "./routes/waha";
 import servicesRoutes from "./routes/services";
 import botStateRoutes from "./routes/botState";
 import botConfigRoutes from "./routes/botConfig";
+import broadcastRouter from "./routes/broadcast";
 import cors from "cors";
 
 export const app = express();
@@ -59,3 +60,5 @@ app.use("/waha", wahaRoutes);
 app.use("/webhook", webhookRoutes);
 
 app.use("/bot-config", botConfigRoutes);
+
+app.use("/broadcast", broadcastRouter);
