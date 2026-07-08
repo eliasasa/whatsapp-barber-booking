@@ -56,29 +56,38 @@ async function main() {
     update: {},
     create: {
       key: "GREETING",
-      content:
-        `Oi! 👋 Sou o assistente do ${BOT_NAME}.\n\nVocê pode:\n - Agendar um horário\n - Ver horários disponíveis\n\nÉ só me dizer o que você quer 😊`,
+      content: `Oi! 👋 Sou o assistente do ${BOT_NAME}.
+
+Você pode:
+ - Agendar um horário
+ - Ver horários disponíveis
+
+É só me dizer o que você quer 😊`,
     },
   });
 
   // Availability blocks (holidays / partial days)
   const year = new Date().getFullYear();
 
-  // Full day blocked: Christmas (25 Dec)
+  // Natal
   const christmasStart = new Date(year, 11, 25, 0, 0, 0);
   const christmasEnd = new Date(year, 11, 26, 0, 0, 0);
 
-  // Partial day: only 09:00-13:00 available (block from 13:00 onwards)
+  // Véspera de Natal - bloqueia após as 13h
   const partialDay = new Date(year, 11, 24, 0, 0, 0);
   const partialBlockStart = new Date(year, 11, 24, 13, 0, 0);
   const partialBlockEnd = new Date(year, 11, 24, 23, 59, 59);
 
-  // Remove any existing blocks for those ranges and insert
   await prisma.availabilityBlock.deleteMany({
     where: {
       OR: [
         { startAt: { gte: christmasStart, lt: christmasEnd } },
-        { startAt: { gte: partialDay, lt: new Date(year, 11, 25, 0, 0, 0) } },
+        {
+          startAt: {
+            gte: partialDay,
+            lt: new Date(year, 11, 25, 0, 0, 0),
+          },
+        },
       ],
     },
   });
@@ -97,26 +106,24 @@ async function main() {
       },
     ],
   });
-}
 
-await prisma.botState.upsert({
-  where: { id: "default" },
-  update: {},
-  create: {
-    id: "default",
-    paused: false,
-    serviceType: "LOCAL",
-  },
-});
-
-const existingBotState = await prisma.botState.findFirst();
-if (!existingBotState) {
-  await prisma.botState.create({
-    data: {
+  // Estado inicial do bot
+  await prisma.botState.upsert({
+    where: { id: "default" },
+    update: {},
+    create: {
+      id: "default",
       paused: false,
       serviceType: "LOCAL",
     },
   });
 }
 
-main().finally(() => prisma.$disconnect());
+main()
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
